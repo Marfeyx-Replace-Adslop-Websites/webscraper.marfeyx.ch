@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Check up to three aliases across hundreds of public platforms and build a private, exportable online-footprint report.">
-  <meta name="theme-color" content="#070816">
+  <meta name="description" content="Search up to three usernames across 455 public platforms and build a private, source-linked online footprint report.">
+  <meta name="theme-color" content="#080914">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' mailto:; upgrade-insecure-requests">
-  <title>AliasTrace — Find your public online footprint</title>
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <title>Marfeyx' Webscraper — Search your public footprint</title>
+  <link rel="icon" href="assets/marfeyx-avatar.jpg" type="image/jpeg">
+  <link rel="apple-touch-icon" href="assets/marfeyx-avatar.jpg">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -16,28 +17,27 @@
   <div class="orb orb-two" aria-hidden="true"></div>
 
   <header class="site-header">
-    <a class="brand" href="#top" aria-label="AliasTrace home">
-      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-      <span>Alias<span>Trace</span></span>
+    <a class="brand" href="#top" aria-label="Marfeyx' Webscraper home">
+      <img class="brand-avatar" src="assets/marfeyx-avatar.jpg" alt="" width="36" height="36">
+      <span>Marfeyx' <span>Webscraper</span></span>
     </a>
     <nav aria-label="Main navigation">
       <a href="#coverage">Coverage</a>
       <a href="#how">How it works</a>
-      <a href="#safety">Safety</a>
     </nav>
     <a class="header-cta" href="mailto:dev@marfeyx.ch">Contact</a>
   </header>
 
   <main id="top">
     <section class="hero" aria-labelledby="hero-title">
-      <div class="eyebrow reveal"><span class="pulse-dot"></span> Public data. Clear evidence. No guesswork.</div>
-      <h1 id="hero-title" class="reveal delay-one">See where an alias<br><span>leaves a trace.</span></h1>
-      <p class="hero-copy reveal delay-two">Search up to three usernames across <strong id="hero-platform-count">400+</strong> public platforms. Verified profiles, useful activity signals, and one clean report—without selling the search history to the usual data-harvesting goblins.</p>
+      <div class="eyebrow reveal"><span class="pulse-dot"></span> Public profiles, checked carefully</div>
+      <h1 id="hero-title" class="reveal delay-one">Search your<br><span>public footprint.</span></h1>
+      <p class="hero-copy reveal delay-two">Check up to three aliases across <strong id="hero-platform-count">455</strong> public platforms. Get linked evidence and activity signals in one private report.</p>
 
       <form id="scan-form" class="search-shell reveal delay-three" novalidate>
         <div class="search-label-row">
           <label for="alias-input">Username, nickname or alias</label>
-          <span id="alias-counter">0 / 3 aliases</span>
+          <span id="alias-counter">0 / 3</span>
         </div>
         <div id="alias-input-wrap" class="alias-input-wrap">
           <div id="alias-chips" class="alias-chips" aria-live="polite"></div>
@@ -45,30 +45,23 @@
           <button id="add-alias" class="add-alias" type="button" aria-label="Add alias">+</button>
         </div>
         <div class="search-actions">
-          <p id="alias-help"><span aria-hidden="true">⌁</span> Press Enter to add another alias. Maximum three.</p>
+          <p id="alias-help">Press Enter to add another alias. Maximum three.</p>
           <button id="scan-button" class="primary-button" type="submit">
-            <span>Start footprint scan</span>
-            <span class="button-arrow" aria-hidden="true">↗</span>
+            <span>Start scan</span><span class="button-arrow" aria-hidden="true">↗</span>
           </button>
         </div>
         <p id="form-error" class="form-error" role="alert"></p>
       </form>
 
       <ul class="trust-row reveal delay-three" aria-label="Product qualities">
-        <li><i>01</i> Fixed safe targets</li>
-        <li><i>02</i> Rate-limit aware</li>
-        <li><i>03</i> Public data only</li>
-        <li><i>04</i> 24-hour deletion</li>
+        <li>Fixed safe targets</li><li>Rate-limit aware</li><li>Public data only</li><li>Deleted in 24 hours</li>
       </ul>
     </section>
 
     <section id="progress-section" class="progress-section" hidden aria-live="polite">
-      <div class="section-heading compact">
-        <div>
-          <span class="kicker">Live scan</span>
-          <h2 id="progress-title">Mapping public profiles</h2>
-        </div>
-        <button id="stop-scan" class="ghost-button" type="button">Stop scan</button>
+      <div class="scan-heading">
+        <div><span class="kicker">Live scan</span><h2 id="progress-title">Mapping public profiles</h2></div>
+        <button id="stop-scan" class="ghost-button" type="button">Stop</button>
       </div>
       <div class="progress-card">
         <div class="radar" aria-hidden="true"><i></i><i></i><i></i><b></b></div>
@@ -76,9 +69,9 @@
           <div class="progress-meta"><span id="progress-label">Preparing platform catalogue…</span><strong id="progress-percent">0%</strong></div>
           <div class="progress-track"><span id="progress-bar"></span></div>
           <div class="progress-stats">
-            <span><strong id="checked-count">0</strong> checked</span>
-            <span><strong id="live-found-count">0</strong> found</span>
-            <span><strong id="elapsed-time">00:00</strong> elapsed</span>
+            <span><strong id="checked-count">0</strong><small>checked</small></span>
+            <span><strong id="live-found-count">0</strong><small>found</small></span>
+            <span><strong id="elapsed-time">00:00</strong><small>elapsed</small></span>
           </div>
         </div>
       </div>
@@ -88,11 +81,7 @@
     <section id="results-section" class="results-section" hidden aria-labelledby="results-title">
       <div id="celebration" class="celebration" aria-hidden="true"></div>
       <div class="section-heading">
-        <div>
-          <span class="kicker">Scan complete</span>
-          <h2 id="results-title">Your public footprint</h2>
-          <p id="results-summary">Results are evidence-based and linked to their original sources.</p>
-        </div>
+        <div><span class="kicker">Scan complete</span><h2 id="results-title">Your public footprint</h2><p id="results-summary">Results are evidence-based and linked to their original sources.</p></div>
         <div class="result-actions">
           <button id="email-report-button" class="secondary-button" type="button">Email report</button>
           <button id="download-report-button" class="primary-button small" type="button">Download JSON <span aria-hidden="true">↓</span></button>
@@ -110,10 +99,7 @@
         <div id="alias-tabs" class="alias-tabs" role="tablist" aria-label="Filter by alias"></div>
         <label class="result-search"><span class="sr-only">Filter platforms</span><input id="result-filter" type="search" placeholder="Filter platforms…"></label>
         <select id="status-filter" aria-label="Filter by result status">
-          <option value="found">Confirmed only</option>
-          <option value="all">All results</option>
-          <option value="uncertain">Uncertain</option>
-          <option value="not_found">Not found</option>
+          <option value="found">Confirmed only</option><option value="all">All results</option><option value="uncertain">Uncertain</option><option value="not_found">Not found</option>
         </select>
       </div>
       <div id="results-grid" class="results-grid"></div>
@@ -122,74 +108,50 @@
 
     <section id="coverage" class="coverage-section">
       <div class="section-heading">
-        <div>
-          <span class="kicker">Wide coverage</span>
-          <h2>One alias. Hundreds of corners.</h2>
-          <p>A maintained catalogue of public profile patterns, grouped by the places people actually leave a trail.</p>
-        </div>
+        <div><span class="kicker">Coverage</span><h2>455 public platforms.</h2><p>Social networks, developer communities, creative portfolios, games, publishing sites and specialist corners of the web.</p></div>
         <div class="coverage-total"><strong id="coverage-count">455</strong><span>platform definitions</span></div>
       </div>
       <div id="coverage-grid" class="coverage-grid">
-        <article data-category="Social"><span class="category-icon">◎</span><div><h3>Social</h3><p>Communities, networks and forums</p></div><strong>—</strong></article>
-        <article data-category="Developer"><span class="category-icon">⌘</span><div><h3>Developer</h3><p>Code, packages and technical profiles</p></div><strong>—</strong></article>
-        <article data-category="Creative"><span class="category-icon">◈</span><div><h3>Creative</h3><p>Video, music, design and portfolios</p></div><strong>—</strong></article>
-        <article data-category="Gaming"><span class="category-icon">◇</span><div><h3>Gaming</h3><p>Players, rankings and communities</p></div><strong>—</strong></article>
-        <article data-category="Publishing"><span class="category-icon">¶</span><div><h3>Publishing</h3><p>Blogs, writing and knowledge sites</p></div><strong>—</strong></article>
-        <article data-category="Other"><span class="category-icon">＋</span><div><h3>Specialist</h3><p>Marketplaces and niche platforms</p></div><strong>—</strong></article>
+        <article data-category="Social"><span class="category-icon">◎</span><div><h3>Social</h3><p>Networks and forums</p></div><strong>—</strong></article>
+        <article data-category="Developer"><span class="category-icon">⌘</span><div><h3>Developer</h3><p>Code and packages</p></div><strong>—</strong></article>
+        <article data-category="Creative"><span class="category-icon">◈</span><div><h3>Creative</h3><p>Video, music and design</p></div><strong>—</strong></article>
+        <article data-category="Gaming"><span class="category-icon">◇</span><div><h3>Gaming</h3><p>Players and communities</p></div><strong>—</strong></article>
+        <article data-category="Publishing"><span class="category-icon">¶</span><div><h3>Publishing</h3><p>Blogs and knowledge</p></div><strong>—</strong></article>
+        <article data-category="Other"><span class="category-icon">＋</span><div><h3>Specialist</h3><p>Marketplaces and niches</p></div><strong>—</strong></article>
       </div>
-      <p class="source-note">Platform definitions are adapted from the MIT-licensed <a href="https://github.com/sherlock-project/sherlock" target="_blank" rel="noopener noreferrer">Sherlock Project</a>. Checks may become unavailable when platforms change or block automated access.</p>
+      <p class="source-note">Browse the complete <a href="sites.html">searchable platform index</a>. Definitions are adapted from the MIT-licensed <a href="https://github.com/sherlock-project/sherlock" target="_blank" rel="noopener noreferrer">Sherlock Project</a>.</p>
     </section>
 
     <section id="how" class="how-section">
-      <div class="section-heading centered">
-        <span class="kicker">How it works</span>
-        <h2>A careful search, not digital divination.</h2>
-        <p>Every result keeps its source and confidence visible.</p>
-      </div>
+      <div class="section-heading centered"><span class="kicker">How it works</span><h2>Four careful steps.</h2></div>
       <div class="steps-grid">
-        <article><span>01</span><h3>Normalize</h3><p>Aliases are validated locally. Arbitrary URLs, domains and request payloads are never accepted.</p></article>
-        <article><span>02</span><h3>Verify</h3><p>Allowlisted profile or public API endpoints are checked in small, delayed batches with strict timeouts.</p></article>
-        <article><span>03</span><h3>Enrich</h3><p>Supported platforms add public activity counts and recent content. Private or gated data stays untouched.</p></article>
-        <article><span>04</span><h3>Report</h3><p>Confirmed, uncertain and failed checks remain separate, then the report expires automatically.</p></article>
-      </div>
-    </section>
-
-    <section id="safety" class="safety-section">
-      <div>
-        <span class="kicker">Designed against abuse</span>
-        <h2>Useful for self-audits.<br>Useless as a request cannon.</h2>
-      </div>
-      <div class="safety-list">
-        <p><span>✓</span><strong>Three-alias hard limit</strong><small>Enforced in the browser, Edge Function and database records.</small></p>
-        <p><span>✓</span><strong>Allowlisted destinations</strong><small>No custom URLs, internal IPs, redirects to private networks or arbitrary methods.</small></p>
-        <p><span>✓</span><strong>Low concurrency</strong><small>Short batches, per-request timeouts, no automatic retries and 429 backoff.</small></p>
-        <p><span>✓</span><strong>Minimal retention</strong><small>Scan records expire after 24 hours; email addresses are deleted after delivery.</small></p>
+        <article><span>01</span><div><h3>Validate</h3><p>Aliases are checked locally; custom URLs are never accepted.</p></div></article>
+        <article><span>02</span><div><h3>Check</h3><p>Fixed public destinations run in small, delayed batches.</p></div></article>
+        <article><span>03</span><div><h3>Enrich</h3><p>Supported sites add public activity and content signals.</p></div></article>
+        <article><span>04</span><div><h3>Report</h3><p>Evidence stays linked and scan data expires automatically.</p></div></article>
       </div>
     </section>
   </main>
 
   <footer>
-    <div class="brand footer-brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>Alias<span>Trace</span></span></div>
+    <div class="brand footer-brand"><img class="brand-avatar" src="assets/marfeyx-avatar.jpg" alt="" width="32" height="32"><span>Marfeyx' <span>Webscraper</span></span></div>
     <p>Public-footprint research with evidence attached.</p>
-    <nav aria-label="Legal navigation"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="mailto:dev@marfeyx.ch">dev@marfeyx.ch</a></nav>
+    <nav aria-label="Footer navigation"><a href="sites.html">Platform index</a><a href="safety.html">Safety</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="mailto:dev@marfeyx.ch">Contact</a></nav>
     <small>© <span id="year"></span> Marfeyx. Not affiliated with the platforms checked.</small>
   </footer>
 
   <dialog id="email-dialog" class="modal">
     <form id="email-form" method="dialog">
       <button class="modal-close" type="submit" value="cancel" aria-label="Close">×</button>
-      <span class="kicker">Report delivery</span>
-      <h2>Send the report</h2>
-      <p>Enter an address for this report only. It is removed after delivery.</p>
-      <label for="report-email">Email address</label>
-      <input id="report-email" type="email" autocomplete="email" maxlength="254" placeholder="you@example.com" required>
+      <span class="kicker">Report delivery</span><h2>Send the report</h2><p>Enter an address for this report only. It is removed after delivery.</p>
+      <label for="report-email">Email address</label><input id="report-email" type="email" autocomplete="email" maxlength="254" placeholder="you@example.com" required>
       <label class="consent"><input id="email-consent" type="checkbox" required><span>I understand this email will receive public-profile research for the aliases in this scan.</span></label>
       <p id="email-status" class="form-error" role="status"></p>
       <button id="send-email-button" class="primary-button" value="default" type="submit">Send report <span aria-hidden="true">↗</span></button>
     </form>
   </dialog>
 
-  <noscript><div class="noscript">AliasTrace requires JavaScript to run the scan. The internet has survived worse, but this particular page will not.</div></noscript>
+  <noscript><div class="noscript">Marfeyx' Webscraper requires JavaScript to run a scan.</div></noscript>
   <script src="config.js"></script>
   <script type="module" src="app.js"></script>
 </body>

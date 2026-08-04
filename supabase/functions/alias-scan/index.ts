@@ -18,7 +18,7 @@ const ALLOWED_ORIGINS = new Set([
   "http://127.0.0.1:8000",
   "http://localhost:4173"
 ]);
-const USER_AGENT = "AliasTrace/1.0 (+https://webscraper.marfeyx.ch; contact: dev@marfeyx.ch)";
+const USER_AGENT = "MarfeyxWebscraper/1.1 (+https://webscraper.marfeyx.ch; contact: dev@marfeyx.ch)";
 
 function getSecretKey(): string {
   const legacy = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -425,7 +425,7 @@ function escapeHtml(value: unknown): string {
 function emailHtml(aliases: string[], results: JsonRecord[]): string {
   const found = results.filter(item => item.status === "found");
   const cards = found.map(item => `<tr><td style="padding:14px;border-bottom:1px solid #272a45"><strong>${escapeHtml(item.platform)}</strong><br><span style="color:#969ab4">@${escapeHtml(item.alias)}</span></td><td style="padding:14px;border-bottom:1px solid #272a45"><a style="color:#b9a6ff" href="${escapeHtml(item.profileUrl)}">Open profile</a></td></tr>`).join("");
-  return `<!doctype html><html><body style="margin:0;background:#080916;color:#f7f7ff;font:15px Arial,sans-serif"><div style="max-width:680px;margin:auto;padding:40px 20px"><p style="color:#a88cff;text-transform:uppercase;letter-spacing:2px;font-size:11px">AliasTrace report</p><h1 style="font-size:38px;margin:8px 0">${found.length} confirmed profiles</h1><p style="color:#969ab4">Aliases: ${aliases.map(alias => `@${escapeHtml(alias)}`).join(", ")}. A matching alias does not prove common ownership; verify important findings at the source.</p><table style="width:100%;border-collapse:collapse;background:#111329;border:1px solid #272a45;border-radius:16px">${cards || `<tr><td style="padding:20px">No confirmed profiles were found.</td></tr>`}</table><p style="color:#6f738d;font-size:12px;margin-top:24px">Generated from public sources. Scan data expires within 24 hours. Questions: dev@marfeyx.ch</p></div></body></html>`;
+  return `<!doctype html><html><body style="margin:0;background:#080914;color:#f4f3fb;font:15px Arial,sans-serif"><div style="max-width:680px;margin:auto;padding:40px 20px"><p style="color:#c3b3ff;text-transform:uppercase;letter-spacing:2px;font-size:11px">Marfeyx' Webscraper report</p><h1 style="font-size:38px;margin:8px 0">${found.length} confirmed profiles</h1><p style="color:#9b9db3">Aliases: ${aliases.map(alias => `@${escapeHtml(alias)}`).join(", ")}. A matching alias does not prove common ownership; verify important findings at the source.</p><table style="width:100%;border-collapse:collapse;background:#111329;border:1px solid #272a45;border-radius:16px">${cards || `<tr><td style="padding:20px">No confirmed profiles were found.</td></tr>`}</table><p style="color:#70738b;font-size:12px;margin-top:24px">Generated from public sources. Scan data expires within 24 hours. Questions: dev@marfeyx.ch</p></div></body></html>`;
 }
 
 async function handleEmail(body: JsonRecord, key: string) {
@@ -441,7 +441,7 @@ async function handleEmail(body: JsonRecord, key: string) {
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json", "user-agent": USER_AGENT },
-    body: JSON.stringify({ from: Deno.env.get("REPORT_FROM") || "AliasTrace <reports@marfeyx.ch>", to: [email], subject: `AliasTrace report for ${(scan.aliases as string[]).join(", ")}`, html: emailHtml(scan.aliases as string[], results) })
+    body: JSON.stringify({ from: Deno.env.get("REPORT_FROM") || "Marfeyx Webscraper <reports@marfeyx.ch>", to: [email], subject: `Marfeyx' Webscraper report for ${(scan.aliases as string[]).join(", ")}`, html: emailHtml(scan.aliases as string[], results) })
   });
   if (!response.ok) throw new HttpError(502, "The email provider rejected the delivery request.");
   return { message: "Report sent. Check your inbox and spam folder." };

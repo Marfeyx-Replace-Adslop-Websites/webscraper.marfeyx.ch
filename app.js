@@ -76,7 +76,7 @@ function renderAliases() {
     chip.append(remove);
     return chip;
   }));
-  $("#alias-counter").textContent = `${state.aliases.length} / 3 aliases`;
+  $("#alias-counter").textContent = `${state.aliases.length} / 3`;
   aliasInput.disabled = state.aliases.length >= 3 || state.scanning;
   $("#add-alias").disabled = state.aliases.length >= 3 || state.scanning;
 }
@@ -99,7 +99,7 @@ async function loadCatalogue() {
 }
 
 function getClientId() {
-  const key = "aliastrace-client-id";
+  const key = "marfeyx-webscraper-client-id";
   let id = localStorage.getItem(key);
   if (!id) {
     id = crypto.randomUUID();
@@ -146,6 +146,8 @@ function resetScan() {
   state.stopped = false;
   state.visibleLimit = 24;
   $("#live-platforms").replaceChildren();
+  $("#progress-title").textContent = "Mapping public profiles";
+  $("#progress-label").textContent = "Preparing platform catalogue…";
   updateProgress(0, 0);
   resultsSection.hidden = true;
 }
@@ -250,16 +252,16 @@ function updateProgress(checked, total) {
 
 function renderLive(incoming) {
   const container = $("#live-platforms");
-  incoming.slice(-8).forEach(result => {
+  incoming.filter(result => result.status === "found").slice(-4).forEach(result => {
     const item = document.createElement("div");
-    item.className = `live-platform ${result.status === "found" ? "found" : ""}`;
+    item.className = "live-platform";
     const name = document.createElement("span");
     name.textContent = `${result.platform} · @${result.alias}`;
     const dot = document.createElement("b");
     item.append(name, dot);
     container.prepend(item);
   });
-  while (container.children.length > 8) container.lastElementChild.remove();
+  while (container.children.length > 4) container.lastElementChild.remove();
 }
 
 function finishScan(partial = false) {
@@ -430,7 +432,7 @@ function celebrate() {
 
 function downloadReport() {
   const report = {
-    product: "AliasTrace",
+    product: "Marfeyx' Webscraper",
     generatedAt: new Date().toISOString(),
     aliases: state.aliases,
     checkedPlatforms: new Set(state.results.map(item => item.platformId)).size,
@@ -441,7 +443,7 @@ function downloadReport() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `aliastrace-${state.aliases.join("-")}-${new Date().toISOString().slice(0, 10)}.json`;
+  link.download = `marfeyx-webscraper-${state.aliases.join("-")}-${new Date().toISOString().slice(0, 10)}.json`;
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
@@ -461,8 +463,8 @@ async function sendEmail(event) {
     setTimeout(() => $("#email-dialog").close(), 1600);
   } catch (error) {
     if (error.status === 503) {
-      const subject = encodeURIComponent(`AliasTrace report for ${state.aliases.join(", ")}`);
-      const body = encodeURIComponent(`The automatic email provider is not configured. Download your report from AliasTrace and attach it here.\n\nAliases: ${state.aliases.join(", ")}`);
+      const subject = encodeURIComponent(`Marfeyx' Webscraper report for ${state.aliases.join(", ")}`);
+      const body = encodeURIComponent(`The automatic email provider is not configured. Download your report from Marfeyx' Webscraper and attach it here.\n\nAliases: ${state.aliases.join(", ")}`);
       location.href = `mailto:${email}?subject=${subject}&body=${body}`;
       status.textContent = "Opened your email app as a fallback.";
     } else status.textContent = error.message;

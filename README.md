@@ -1,6 +1,6 @@
-# AliasTrace
+# Marfeyx' Webscraper
 
-AliasTrace searches up to three aliases across a curated catalogue of 455 public platforms. The frontend is a dependency-free static site hosted on GitHub Pages. Supabase is the only application backend and provides short-lived scan storage, abuse controls, and a tightly allowlisted Edge Function for checks that browsers cannot read because of CORS.
+Marfeyx' Webscraper searches up to three aliases across a curated catalogue of 455 public platforms. The frontend is a dependency-free static site hosted on GitHub Pages. Supabase is the only application backend and provides short-lived scan storage, abuse controls, and a tightly allowlisted Edge Function for checks that browsers cannot read because of CORS.
 
 ## Architecture
 
