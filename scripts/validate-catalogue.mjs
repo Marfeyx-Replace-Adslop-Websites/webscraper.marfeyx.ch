@@ -15,7 +15,7 @@ for (const site of catalogue.sites) {
 }
 if (catalogue.totalSites !== catalogue.sites.length) throw new Error("Catalogue metadata count is stale.");
 if (!Number.isInteger(catalogue.focusedSites) || catalogue.focusedSites < 100 || catalogue.focusedSites > catalogue.sites.length) throw new Error("Focused catalogue count is invalid.");
-if (CLAIM_PLATFORMS.length < 20 || CLAIM_PLATFORMS.length > 40) throw new Error("Claim platform count must stay between 20 and 40.");
+if (CLAIM_PLATFORMS.length !== 100) throw new Error("Username Sniper must expose exactly 100 curated platforms.");
 const claimIds = new Set();
 for (const platform of CLAIM_PLATFORMS) {
   if (!ids.has(platform.id) || claimIds.has(platform.id)) throw new Error(`Invalid claim platform: ${platform.id}`);

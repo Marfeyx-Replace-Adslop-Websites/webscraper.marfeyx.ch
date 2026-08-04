@@ -11,7 +11,7 @@ type Platform = (typeof PLATFORMS)[number];
 const PLATFORM_MAP = new Map<string, Platform>(PLATFORMS.map(platform => [platform.id, platform]));
 const CLAIM_PLATFORM_ID_SET = new Set<string>(CLAIM_PLATFORM_IDS);
 const MAX_ALIASES = 3;
-const MAX_CLAIM_PLATFORMS = 40;
+const MAX_CLAIM_PLATFORMS = 100;
 const WORKER_CHUNK_SIZE = 24;
 const WORKER_CONCURRENCY = 16;
 const FETCH_TIMEOUT_MS = 4_500;
@@ -24,7 +24,7 @@ const ALLOWED_ORIGINS = new Set([
   "http://127.0.0.1:8000",
   "http://localhost:4173"
 ]);
-const USER_AGENT = "MarfeyxWebscraper/1.5 (+https://webscraper.marfeyx.ch; contact: dev@marfeyx.ch)";
+const USER_AGENT = "MarfeyxWebscraper/1.6 (+https://webscraper.marfeyx.ch; contact: dev@marfeyx.ch)";
 
 function getSecretKey(): string {
   const legacy = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");

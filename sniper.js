@@ -1,4 +1,4 @@
-import { CLAIM_PLATFORMS } from "./claim-platforms.js";
+import { CLAIM_PLATFORMS } from "./claim-platforms-1.6.js";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -336,7 +336,7 @@ function createResultCard(result) {
   link.target = "_blank";
   link.rel = "noopener noreferrer";
   link.className = status === "available" ? "primary-button small" : "secondary-button";
-  link.textContent = status === "available" ? "Claim username ↗" : status === "taken" ? "View profile ↗" : "Check manually ↗";
+  link.textContent = status === "available" ? `${platform.claimLabel || "Claim username"} ↗` : status === "taken" ? "View profile ↗" : `${platform.claimLabel || "Check manually"} ↗`;
   actions.append(link);
   if (status !== "taken") {
     const mark = document.createElement("button");
@@ -382,7 +382,7 @@ async function resumeActiveCheck() {
   state.scanId = saved.scanId;
   state.scanToken = saved.scanToken;
   state.username = saved.username;
-  state.requestedIds = saved.requestedIds.filter(id => platformMap.has(id)).slice(0, 40);
+  state.requestedIds = saved.requestedIds.filter(id => platformMap.has(id)).slice(0, 100);
   state.platformTotal = Number(saved.platformTotal) || state.requestedIds.length;
   state.startedAt = Number(saved.startedAt) || Date.now();
   state.scanning = true;
