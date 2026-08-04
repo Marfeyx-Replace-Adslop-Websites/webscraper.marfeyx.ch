@@ -1,16 +1,13 @@
 export const CLAIM_PLATFORM_IDS = [
-  "github", "reddit", "youtube-2", "instagram", "tiktok", "facebook", "twitter-2", "bluesky",
-  "twitch-2", "pinterest", "tumblr-2", "medium", "soundcloud", "deviantart-2", "behance",
-  "dribbble", "gitlab", "codepen", "replit-com", "stackoverflow", "hackernews", "mastodon-social",
-  "telegram", "steam-community-user", "threads-2", "linkedin", "snapchat", "patreon", "vimeo",
-  "flickr-2", "quora", "letterboxd", "goodreads", "last-fm", "bandcamp", "keybase", "about-me",
-  "linktree", "lichess", "wikipedia-2", "sourceforge-2", "calendly", "ebay", "substack-2",
-  "tripadvisor", "xing", "giphy-2", "w3schools", "digitalocean", "fiverr", "paypal", "upwork",
-  "figma", "500px", "geeksfor-geeks", "hackernoon", "opensea", "freecodecamp-2", "tvtropes",
-  "jsfiddle", "geocaching-2", "gog", "kickstarter", "freepik", "beacons-ai", "taplink",
-  "freelancer-com", "inaturalist", "venmo-2", "leetcode-2", "creativemarket", "imgflip",
-  "designs99", "alternativeto", "fur-affinity", "moddb", "hackerrank-2", "domestika-org",
-  "lnk-bio", "planetminecraft", "picsart", "are-na", "chess", "docker-hub", "githubgist", "npm",
-  "anime-planet", "depop", "codementor", "lomography", "liberapay", "filmweb", "spatial", "dlive",
-  "trueachievements", "promptbase", "namemc", "vivino", "warpcast", "revolut-me"
+  "youtube-2", "instagram", "tiktok", "facebook", "twitter-2", "reddit", "snapchat",
+  "threads-2", "discord", "twitch-2", "telegram", "pinterest", "tumblr-2", "bluesky",
+  "mastodon-social", "linkedin", "quora", "medium", "soundcloud", "deviantart-2", "behance",
+  "dribbble", "patreon", "vimeo", "flickr-2", "last-fm", "bandcamp", "linktree",
+  "substack-2", "500px", "unsplash", "giphy-2", "imgur", "9gag", "wattpad",
+  "kick", "rumble", "buymeacoffee", "steam-community-user", "roblox", "xbox-gamertag", "chess",
+  "lichess", "gog", "namemc", "planetminecraft", "myanimelist", "anilist", "trakt",
+  "letterboxd", "goodreads", "fandom", "github", "gitlab", "npm", "docker-hub",
+  "codepen", "replit-com", "leetcode-2", "hackerrank-2", "freecodecamp-2", "sourceforge-2", "keybase",
+  "jsfiddle", "hackernews", "ebay", "depop", "poshmark", "paypal", "venmo-2",
+  "cashapp", "revolut-me", "fiverr", "opensea", "wikipedia-2", "geocaching-2", "inaturalist"
 ] as const;

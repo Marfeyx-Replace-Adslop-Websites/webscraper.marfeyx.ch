@@ -10,6 +10,53 @@ type ScanStatus = "found" | "not_found" | "uncertain" | "error";
 type Platform = (typeof PLATFORMS)[number];
 
 const PLATFORM_MAP = new Map<string, Platform>(PLATFORMS.map(platform => [platform.id, platform]));
+const POPULAR_PLATFORM_IDS = [
+  "youtube-2",
+  "instagram",
+  "tiktok",
+  "facebook",
+  "twitter-2",
+  "reddit",
+  "snapchat",
+  "threads-2",
+  "discord",
+  "twitch-2",
+  "telegram",
+  "pinterest",
+  "tumblr-2",
+  "bluesky",
+  "mastodon-social",
+  "linkedin",
+  "quora",
+  "spotify",
+  "soundcloud",
+  "steam-community-user",
+  "roblox",
+  "xbox-gamertag",
+  "letterboxd",
+  "goodreads",
+  "wattpad",
+  "myanimelist",
+  "anilist",
+  "trakt",
+  "fandom",
+  "ebay",
+  "depop",
+  "poshmark",
+  "paypal",
+  "venmo-2",
+  "cashapp",
+  "revolut-me",
+  "fiverr",
+  "github",
+  "gitlab"
+] as const;
+const FOCUSED_DUPLICATE_OF: Record<string, string> = {
+  youtube: "youtube-2",
+  twitter: "twitter-2",
+  twitch: "twitch-2",
+  threads: "threads-2"
+};
 const CLAIM_PLATFORM_ID_SET = new Set<string>(CLAIM_PLATFORM_IDS);
 const MAX_ALIASES = 3;
 const MAX_CLAIM_PLATFORMS = 100;
@@ -26,7 +73,7 @@ const ALLOWED_ORIGINS = new Set([
   "http://127.0.0.1:8000",
   "http://localhost:4173"
 ]);
-const USER_AGENT = "MarfeyxWebscraper/1.6 (+https://webscraper.marfeyx.ch; contact: dev@marfeyx.ch)";
+const USER_AGENT = "MarfeyxWebscraper/1.8 (+https://webscraper.marfeyx.ch; contact: dev@marfeyx.ch)";
 
 function getSecretKey(): string {
   const legacy = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -400,6 +447,23 @@ function aliasAllowed(platform: Platform, aliases: string[]): boolean {
   } catch { return true; }
 }
 
+function selectScanPlatforms(scope: "focused" | "deep", aliases: string[]): Platform[] {
+  const eligible = PLATFORMS.filter(platform => aliasAllowed(platform, aliases));
+  if (scope === "deep") return eligible;
+
+  const byId = new Map(eligible.map(platform => [platform.id, platform]));
+  const popular = POPULAR_PLATFORM_IDS
+    .map(id => byId.get(id))
+    .filter((platform): platform is Platform => Boolean(platform));
+  const popularIds = new Set(popular.map(platform => platform.id));
+  const remainder = eligible.filter(platform => {
+    if (popularIds.has(platform.id)) return false;
+    const preferred = FOCUSED_DUPLICATE_OF[platform.id];
+    return !preferred || !popularIds.has(preferred);
+  });
+  return [...popular, ...remainder].slice(0, FOCUSED_SITE_COUNT);
+}
+
 async function workerSignature(scanId: string): Promise<string> {
   return sha256(`${getSecretKey()}|scan-worker|${scanId}`);
 }
@@ -491,7 +555,7 @@ async function handleStart(body: JsonRecord, key: string) {
   const scope = body.scope === "deep" ? "deep" : "focused";
   await consumeLimit(key, "start", 2, 3600);
   await consumeLimit("global", "start", 60, 3600);
-  const selected = (scope === "deep" ? [...PLATFORMS] : PLATFORMS.slice(0, FOCUSED_SITE_COUNT)).filter(platform => aliasAllowed(platform, aliases));
+  const selected = selectScanPlatforms(scope, aliases);
   const platformIds = selected.map(platform => platform.id);
   if (!platformIds.length) throw new HttpError(400, "No platform supports the supplied aliases.");
   const token = randomToken();

@@ -3,6 +3,48 @@ const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
 const config = window.WEBSCRAPER_CONFIG || {};
 const RESULT_PAGE_SIZE = matchMedia("(max-width: 640px)").matches ? 8 : 12;
+const POPULAR_RESULT_IDS = [
+  "youtube-2",
+  "instagram",
+  "tiktok",
+  "facebook",
+  "twitter-2",
+  "reddit",
+  "snapchat",
+  "threads-2",
+  "discord",
+  "twitch-2",
+  "telegram",
+  "pinterest",
+  "tumblr-2",
+  "bluesky",
+  "mastodon-social",
+  "linkedin",
+  "quora",
+  "spotify",
+  "soundcloud",
+  "steam-community-user",
+  "roblox",
+  "xbox-gamertag",
+  "letterboxd",
+  "goodreads",
+  "wattpad",
+  "myanimelist",
+  "anilist",
+  "trakt",
+  "fandom",
+  "ebay",
+  "depop",
+  "poshmark",
+  "paypal",
+  "venmo-2",
+  "cashapp",
+  "revolut-me",
+  "fiverr",
+  "github",
+  "gitlab"
+];
+const POPULAR_RESULT_ORDER = new Map(POPULAR_RESULT_IDS.map((id, index) => [id, index]));
 const state = {
   aliases: [],
   catalogue: [],
@@ -95,7 +137,7 @@ async function loadCatalogue() {
   $("#hero-platform-count").textContent = `${count}`;
   $("#coverage-count").textContent = count;
   $("#deep-scan-count").textContent = `${count.toLocaleString()} sites`;
-  $("#focused-scan-count").textContent = `${(data.focusedSites || 600).toLocaleString()} sites · faster`;
+  $("#focused-scan-count").textContent = `${(data.focusedSites || 600).toLocaleString()} popular-first sites · faster`;
   const grouped = Object.groupBy ? Object.groupBy(state.catalogue, site => site.category) : state.catalogue.reduce((acc, site) => {
     (acc[site.category] ||= []).push(site);
     return acc;
@@ -408,7 +450,13 @@ function renderResultCards({ append = false } = {}) {
     .filter(item => state.activeAlias === "all" || item.alias === state.activeAlias)
     .filter(item => status === "all" || item.status === status)
     .filter(item => !query || `${item.platform} ${item.alias}`.toLowerCase().includes(query))
-    .sort((a, b) => (order[a.status] ?? 9) - (order[b.status] ?? 9) || a.platform.localeCompare(b.platform));
+    .sort((a, b) => {
+      const aPopular = POPULAR_RESULT_ORDER.has(a.platformId);
+      const bPopular = POPULAR_RESULT_ORDER.has(b.platformId);
+      if (aPopular !== bPopular) return aPopular ? -1 : 1;
+      if (aPopular && bPopular) return POPULAR_RESULT_ORDER.get(a.platformId) - POPULAR_RESULT_ORDER.get(b.platformId);
+      return (order[a.status] ?? 9) - (order[b.status] ?? 9) || a.platform.localeCompare(b.platform);
+    });
   const grid = $("#results-grid");
   const page = filtered.slice(0, state.visibleLimit);
   if (!page.length) {
