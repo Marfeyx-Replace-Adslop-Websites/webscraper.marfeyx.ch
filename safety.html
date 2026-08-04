@@ -21,7 +21,7 @@
     <div class="safety-list">
       <article><span>✓</span><h2>Three-alias hard limit</h2><p>The limit is enforced in the browser, Edge Function and database records, not just suggested in the interface.</p></article>
       <article><span>✓</span><h2>Allowlisted destinations</h2><p>Users submit platform IDs, never URLs. Custom targets, private network addresses, arbitrary methods and redirect chains are rejected.</p></article>
-      <article><span>✓</span><h2>Low concurrency</h2><p>Checks run in small delayed batches with strict timeouts, no automatic retry storms and explicit backoff for rate-limit responses.</p></article>
+      <article><span>✓</span><h2>Bounded concurrency</h2><p>Checks run in small resumable server-side chunks with strict timeouts. Closing the browser does not cancel the job, and each chunk remains bounded.</p></article>
       <article><span>✓</span><h2>Request budgets</h2><p>Per-client and global limits restrict scan creation, batch size and total requests. Suspicious or oversized payloads are refused early.</p></article>
       <article><span>✓</span><h2>Minimal retention</h2><p>Scan records expire within 24 hours. Email addresses are removed after delivery and are never added to a marketing list.</p></article>
       <article><span>✓</span><h2>Public data only</h2><p>The service does not log into platforms, bypass access controls or attempt to retrieve private profiles. Important matches must be verified at the linked source.</p></article>

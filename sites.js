@@ -26,7 +26,7 @@ function renderSites() {
   const query = search.value.trim().toLocaleLowerCase();
   const visible = sites.filter(site => {
     const categoryMatch = activeCategory === "All" || site.category === activeCategory;
-    const haystack = `${site.name} ${site.category} ${domainFor(site)}`.toLocaleLowerCase();
+    const haystack = `${site.name} ${site.category} ${site.region || ""} ${(site.tags || []).join(" ")} ${domainFor(site)}`.toLocaleLowerCase();
     return categoryMatch && (!query || haystack.includes(query));
   });
   count.textContent = `${visible.length} of ${sites.length}`;
@@ -44,7 +44,7 @@ function renderSites() {
     const domain = document.createElement("p");
     domain.textContent = domainFor(site);
     const category = document.createElement("span");
-    category.textContent = site.category;
+    category.textContent = site.region && site.region !== "Global" ? `${site.category} · ${site.region}` : site.category;
     card.append(title, domain, category);
     return card;
   }));

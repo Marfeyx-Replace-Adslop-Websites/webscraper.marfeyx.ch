@@ -13,6 +13,8 @@ const state = {
   controller: null,
   startedAt: null,
   timer: null,
+  lastResultId: 0,
+  platformTotal: 0,
   activeAlias: "all",
   visibleLimit: 24
 };
@@ -24,6 +26,7 @@ const formError = $("#form-error");
 const progressSection = $("#progress-section");
 const resultsSection = $("#results-section");
 const demoMode = new URLSearchParams(location.search).get("demo") === "1";
+const ACTIVE_SCAN_KEY = "marfeyx-active-scan-v2";
 
 function configured() {
   return /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(config.supabaseUrl || "") &&
@@ -89,6 +92,8 @@ async function loadCatalogue() {
   const count = state.catalogue.length;
   $("#hero-platform-count").textContent = `${count}`;
   $("#coverage-count").textContent = count;
+  $("#deep-scan-count").textContent = `${count.toLocaleString()} sites`;
+  $("#focused-scan-count").textContent = `${(data.focusedSites || 600).toLocaleString()} priority sites`;
   const grouped = Object.groupBy ? Object.groupBy(state.catalogue, site => site.category) : state.catalogue.reduce((acc, site) => {
     (acc[site.category] ||= []).push(site);
     return acc;
@@ -132,19 +137,14 @@ async function api(body, signal) {
   return data;
 }
 
-function eligibleSites() {
-  return state.catalogue.filter(site => state.aliases.some(alias => {
-    if (!site.regex) return true;
-    try { return new RegExp(site.regex).test(alias); } catch { return true; }
-  }));
-}
-
 function resetScan() {
   state.results = [];
   state.scanId = null;
   state.scanToken = null;
   state.stopped = false;
   state.visibleLimit = 24;
+  state.lastResultId = 0;
+  state.platformTotal = 0;
   $("#live-platforms").replaceChildren();
   $("#progress-title").textContent = "Mapping public profiles";
   $("#progress-label").textContent = "Preparing platform catalogue…";
@@ -178,35 +178,16 @@ async function startScan(event) {
   try {
     if (demoMode) {
       await runDemo();
+      finishScan();
     } else {
-      const sites = eligibleSites();
-      const started = await api({ action: "start", aliases: state.aliases, platformCount: sites.length }, state.controller.signal);
+      const scope = $("input[name='scan-scope']:checked")?.value === "deep" ? "deep" : "focused";
+      const started = await api({ action: "start", aliases: state.aliases, scope }, state.controller.signal);
       state.scanId = started.scanId;
       state.scanToken = started.scanToken;
-      const batchSize = Math.min(Number(config.batchSize) || 8, 10);
-      let checked = 0;
-      for (let index = 0; index < sites.length && !state.stopped; index += batchSize) {
-        const batch = sites.slice(index, index + batchSize);
-        $("#progress-label").textContent = `Checking ${batch[0].name} → ${batch.at(-1).name}`;
-        const payload = await api({
-          action: "scan-batch",
-          scanId: state.scanId,
-          scanToken: state.scanToken,
-          aliases: state.aliases,
-          platformIds: batch.map(site => site.id)
-        }, state.controller.signal);
-        const incoming = Array.isArray(payload.results) ? payload.results : [];
-        state.results.push(...incoming);
-        checked += batch.length;
-        updateProgress(checked, sites.length);
-        renderLive(incoming);
-        if (payload.retryAfterMs) await wait(Math.min(payload.retryAfterMs, 5000), state.controller.signal);
-        else await wait(450, state.controller.signal);
-      }
-      if (state.stopped) throw new DOMException("Stopped", "AbortError");
-      await api({ action: "finish", scanId: state.scanId, scanToken: state.scanToken }, state.controller.signal).catch(() => null);
+      state.platformTotal = started.platformCount;
+      saveActiveScan();
+      await pollScan();
     }
-    finishScan();
   } catch (error) {
     if (error.name === "AbortError") {
       $("#progress-label").textContent = "Scan stopped. Partial results are available.";
@@ -216,6 +197,104 @@ async function startScan(event) {
       formError.textContent = `${error.message}${retry}`;
       progressSection.hidden = true;
       form.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  } finally {
+    state.scanning = false;
+    clearInterval(state.timer);
+    $("#scan-button").disabled = false;
+    renderAliases();
+  }
+}
+
+function saveActiveScan() {
+  localStorage.setItem(ACTIVE_SCAN_KEY, JSON.stringify({
+    scanId: state.scanId,
+    scanToken: state.scanToken,
+    aliases: state.aliases,
+    startedAt: state.startedAt,
+    platformTotal: state.platformTotal
+  }));
+}
+
+function clearActiveScan() {
+  localStorage.removeItem(ACTIVE_SCAN_KEY);
+}
+
+function mergeResults(incoming) {
+  const existing = new Set(state.results.map(result => `${result.platformId}\u0000${result.alias}`));
+  const fresh = incoming.filter(result => {
+    const key = `${result.platformId}\u0000${result.alias}`;
+    if (existing.has(key)) return false;
+    existing.add(key);
+    return true;
+  });
+  state.results.push(...fresh);
+  return fresh;
+}
+
+async function pollScan() {
+  while (!state.stopped) {
+    const payload = await api({
+      action: "status",
+      scanId: state.scanId,
+      scanToken: state.scanToken,
+      afterId: state.lastResultId
+    }, state.controller.signal);
+    state.platformTotal = payload.platformCount || state.platformTotal;
+    state.lastResultId = payload.lastResultId || state.lastResultId;
+    const fresh = mergeResults(Array.isArray(payload.results) ? payload.results : []);
+    renderLive(fresh);
+    updateProgress(payload.checkedCount || 0, state.platformTotal, payload.foundCount);
+    if (payload.lastPlatform) $("#progress-label").textContent = `Checked through ${payload.lastPlatform}`;
+    else $("#progress-label").textContent = payload.status === "queued" ? "Starting secure background workers…" : "Checking priority platforms…";
+    saveActiveScan();
+
+    if (payload.hasMore) continue;
+    if (payload.status === "complete") {
+      clearActiveScan();
+      finishScan();
+      return;
+    }
+    if (payload.status === "stopped") {
+      clearActiveScan();
+      finishScan(true);
+      return;
+    }
+    if (payload.status === "failed") {
+      clearActiveScan();
+      throw new Error(payload.error || "The background scan could not be completed.");
+    }
+    await wait(document.hidden ? 4000 : 1400, state.controller.signal);
+  }
+}
+
+async function resumeActiveScan() {
+  if (demoMode || state.scanning) return;
+  let saved;
+  try { saved = JSON.parse(localStorage.getItem(ACTIVE_SCAN_KEY) || "null"); }
+  catch { clearActiveScan(); return; }
+  if (!saved?.scanId || !saved?.scanToken || !Array.isArray(saved.aliases)) return;
+  resetScan();
+  state.scanId = saved.scanId;
+  state.scanToken = saved.scanToken;
+  state.aliases = saved.aliases.slice(0, 3);
+  state.startedAt = Number(saved.startedAt) || Date.now();
+  state.platformTotal = Number(saved.platformTotal) || 0;
+  state.lastResultId = 0;
+  state.scanning = true;
+  state.controller = new AbortController();
+  renderAliases();
+  $("#scan-button").disabled = true;
+  progressSection.hidden = false;
+  $("#progress-label").textContent = "Reconnecting to your background scan…";
+  startTimer();
+  try {
+    await pollScan();
+  } catch (error) {
+    if (error.status === 404 || error.status === 403) clearActiveScan();
+    if (error.name !== "AbortError") {
+      formError.textContent = error.message;
+      if (!state.results.length) progressSection.hidden = true;
     }
   } finally {
     state.scanning = false;
@@ -242,12 +321,12 @@ function startTimer() {
   state.timer = setInterval(tick, 1000);
 }
 
-function updateProgress(checked, total) {
+function updateProgress(checked, total, foundCount = null) {
   const percent = total ? Math.round((checked / total) * 100) : 0;
   $("#progress-percent").textContent = `${percent}%`;
   $("#progress-bar").style.width = `${percent}%`;
   $("#checked-count").textContent = checked;
-  $("#live-found-count").textContent = state.results.filter(result => result.status === "found").length;
+  $("#live-found-count").textContent = foundCount ?? state.results.filter(result => result.status === "found").length;
 }
 
 function renderLive(incoming) {
@@ -288,7 +367,7 @@ function renderResults() {
   $("#stat-found").textContent = found.length;
   $("#stat-content").textContent = compactNumber(content);
   $("#stat-checked").textContent = uniquePlatforms;
-  $("#stat-coverage").textContent = `${Math.round(uniquePlatforms / Math.max(state.catalogue.length, 1) * 100)}% catalogue coverage`;
+  $("#stat-coverage").textContent = `${Math.round(uniquePlatforms / Math.max(state.platformTotal || state.catalogue.length, 1) * 100)}% selected-scan coverage`;
   $("#stat-confidence").textContent = possible ? `${Math.round(found.length / possible * 100)}%` : "—";
   $("#results-summary").textContent = `${state.aliases.map(alias => `@${alias}`).join(", ")} produced ${found.length} confirmed profile${found.length === 1 ? "" : "s"} and ${uncertain.length} uncertain check${uncertain.length === 1 ? "" : "s"}.`;
   renderAliasTabs();
@@ -505,7 +584,14 @@ aliasInput.addEventListener("keydown", event => {
 });
 $("#add-alias").addEventListener("click", () => addAlias());
 form.addEventListener("submit", startScan);
-$("#stop-scan").addEventListener("click", () => { state.stopped = true; state.controller?.abort(); });
+$("#stop-scan").addEventListener("click", async () => {
+  state.stopped = true;
+  if (state.scanId && state.scanToken && !demoMode) {
+    await api({ action: "stop", scanId: state.scanId, scanToken: state.scanToken }).catch(() => null);
+  }
+  clearActiveScan();
+  state.controller?.abort();
+});
 $("#result-filter").addEventListener("input", () => { state.visibleLimit = 24; renderResultCards(); });
 $("#status-filter").addEventListener("change", () => { state.visibleLimit = 24; renderResultCards(); });
 $("#load-more").addEventListener("click", () => { state.visibleLimit += 24; renderResultCards(); });
@@ -514,4 +600,6 @@ $("#email-report-button").addEventListener("click", () => $("#email-dialog").sho
 $("#email-form").addEventListener("submit", sendEmail);
 $("#year").textContent = new Date().getFullYear();
 
-loadCatalogue().catch(error => { formError.textContent = error.message; });
+loadCatalogue()
+  .then(resumeActiveScan)
+  .catch(error => { formError.textContent = error.message; });

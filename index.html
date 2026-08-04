@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Search up to three usernames across 455 public platforms and build a private, source-linked online footprint report.">
+  <meta name="description" content="Search up to three usernames across more than 1,700 public platforms and build a private, source-linked online footprint report.">
   <meta name="theme-color" content="#080914">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' mailto:; upgrade-insecure-requests">
   <title>Marfeyx' Webscraper — Search your public footprint</title>
@@ -32,7 +32,7 @@
     <section class="hero" aria-labelledby="hero-title">
       <div class="eyebrow reveal"><span class="pulse-dot"></span> Public profiles, checked carefully</div>
       <h1 id="hero-title" class="reveal delay-one">Search your<br><span>public footprint.</span></h1>
-      <p class="hero-copy reveal delay-two">Check up to three aliases across <strong id="hero-platform-count">455</strong> public platforms. Get linked evidence and activity signals in one private report.</p>
+      <p class="hero-copy reveal delay-two">Check up to three aliases across <strong id="hero-platform-count">1,700+</strong> public platforms. Get linked evidence and activity signals in one private report.</p>
 
       <form id="scan-form" class="search-shell reveal delay-three" novalidate>
         <div class="search-label-row">
@@ -44,6 +44,11 @@
           <input id="alias-input" name="alias" type="text" inputmode="text" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="32" placeholder="e.g. marfeyx" aria-describedby="alias-help">
           <button id="add-alias" class="add-alias" type="button" aria-label="Add alias">+</button>
         </div>
+        <fieldset class="scan-scope">
+          <legend>Scan depth</legend>
+          <label><input type="radio" name="scan-scope" value="focused" checked><span><strong>Focused</strong><small id="focused-scan-count">600 priority sites</small></span></label>
+          <label><input type="radio" name="scan-scope" value="deep"><span><strong>Deep</strong><small id="deep-scan-count">1,700+ sites</small></span></label>
+        </fieldset>
         <div class="search-actions">
           <p id="alias-help">Press Enter to add another alias. Maximum three.</p>
           <button id="scan-button" class="primary-button" type="submit">
@@ -73,6 +78,7 @@
             <span><strong id="live-found-count">0</strong><small>found</small></span>
             <span><strong id="elapsed-time">00:00</strong><small>elapsed</small></span>
           </div>
+          <p class="background-note"><span>✓</span> Safe to close Safari — scanning continues securely in the background.</p>
         </div>
       </div>
       <div id="live-platforms" class="live-platforms"></div>
@@ -108,8 +114,8 @@
 
     <section id="coverage" class="coverage-section">
       <div class="section-heading">
-        <div><span class="kicker">Coverage</span><h2>455 public platforms.</h2><p>Social networks, developer communities, creative portfolios, games, publishing sites and specialist corners of the web.</p></div>
-        <div class="coverage-total"><strong id="coverage-count">455</strong><span>platform definitions</span></div>
+        <div><span class="kicker">Coverage</span><h2>A much wider public index.</h2><p>Social networks, developer communities, creative portfolios, games, publishing sites and specialist corners of the web.</p></div>
+        <div class="coverage-total"><strong id="coverage-count">1,700+</strong><span>platform definitions</span></div>
       </div>
       <div id="coverage-grid" class="coverage-grid">
         <article data-category="Social"><span class="category-icon">◎</span><div><h3>Social</h3><p>Networks and forums</p></div><strong>—</strong></article>
@@ -119,14 +125,14 @@
         <article data-category="Publishing"><span class="category-icon">¶</span><div><h3>Publishing</h3><p>Blogs and knowledge</p></div><strong>—</strong></article>
         <article data-category="Other"><span class="category-icon">＋</span><div><h3>Specialist</h3><p>Marketplaces and niches</p></div><strong>—</strong></article>
       </div>
-      <p class="source-note">Browse the complete <a href="sites.html">searchable platform index</a>. Definitions are adapted from the MIT-licensed <a href="https://github.com/sherlock-project/sherlock" target="_blank" rel="noopener noreferrer">Sherlock Project</a>.</p>
+      <p class="source-note">Browse the complete <a href="sites.html">searchable platform index</a>. Definitions are adapted from the MIT-licensed <a href="https://github.com/sherlock-project/sherlock" target="_blank" rel="noopener noreferrer">Sherlock Project</a> and <a href="https://github.com/soxoj/maigret" target="_blank" rel="noopener noreferrer">Maigret</a> catalogues.</p>
     </section>
 
     <section id="how" class="how-section">
       <div class="section-heading centered"><span class="kicker">How it works</span><h2>Four careful steps.</h2></div>
       <div class="steps-grid">
         <article><span>01</span><div><h3>Validate</h3><p>Aliases are checked locally; custom URLs are never accepted.</p></div></article>
-        <article><span>02</span><div><h3>Check</h3><p>Fixed public destinations run in small, delayed batches.</p></div></article>
+        <article><span>02</span><div><h3>Check</h3><p>Fixed public destinations run in resumable server-side chunks.</p></div></article>
         <article><span>03</span><div><h3>Enrich</h3><p>Supported sites add public activity and content signals.</p></div></article>
         <article><span>04</span><div><h3>Report</h3><p>Evidence stays linked and scan data expires automatically.</p></div></article>
       </div>

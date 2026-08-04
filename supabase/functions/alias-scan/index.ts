@@ -1,5 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
-import { PLATFORMS } from "./catalogue.ts";
+import { FOCUSED_SITE_COUNT, PLATFORMS } from "./catalogue.ts";
+
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
 
 type JsonRecord = Record<string, unknown>;
 type ScanStatus = "found" | "not_found" | "uncertain" | "error";
@@ -7,9 +9,10 @@ type Platform = (typeof PLATFORMS)[number];
 
 const PLATFORM_MAP = new Map<string, Platform>(PLATFORMS.map(platform => [platform.id, platform]));
 const MAX_ALIASES = 3;
-const MAX_BATCH = 10;
-const FETCH_TIMEOUT_MS = 7_000;
-const MAX_RESPONSE_BYTES = 160_000;
+const WORKER_CHUNK_SIZE = 24;
+const WORKER_CONCURRENCY = 16;
+const FETCH_TIMEOUT_MS = 4_500;
+const MAX_RESPONSE_BYTES = 96_000;
 const ALIAS_PATTERN = /^[\p{L}\p{N}][\p{L}\p{N}._-]{0,31}$/u;
 const ALLOWED_ORIGINS = new Set([
   "https://webscraper.marfeyx.ch",
@@ -18,7 +21,7 @@ const ALLOWED_ORIGINS = new Set([
   "http://127.0.0.1:8000",
   "http://localhost:4173"
 ]);
-const USER_AGENT = "MarfeyxWebscraper/1.1 (+https://webscraper.marfeyx.ch; contact: dev@marfeyx.ch)";
+const USER_AGENT = "MarfeyxWebscraper/1.2 (+https://webscraper.marfeyx.ch; contact: dev@marfeyx.ch)";
 
 function getSecretKey(): string {
   const legacy = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -28,6 +31,16 @@ function getSecretKey(): string {
     if (keys.default) return keys.default;
   } catch { /* handled below */ }
   throw new Error("Supabase secret key is unavailable");
+}
+
+function getPublishableKey(): string {
+  try {
+    const keys = JSON.parse(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS") || "{}") as Record<string, string>;
+    if (keys.default) return keys.default;
+  } catch { /* handled below */ }
+  const legacy = Deno.env.get("SUPABASE_ANON_KEY");
+  if (legacy) return legacy;
+  throw new Error("Supabase publishable key is unavailable");
 }
 
 const supabase = createClient(Deno.env.get("SUPABASE_URL")!, getSecretKey(), {
@@ -109,7 +122,7 @@ async function consumeLimit(key: string, action: string, limit: number, windowSe
 async function verifyScan(scanId: unknown, token: unknown) {
   if (typeof scanId !== "string" || typeof token !== "string" || token.length < 32) throw new HttpError(400, "Invalid scan credentials.");
   const tokenHash = await sha256(token);
-  const { data, error } = await supabase.from("scans").select("id, aliases, platform_count, status, expires_at").eq("id", scanId).eq("token_hash", tokenHash).maybeSingle();
+  const { data, error } = await supabase.from("scans").select("id, aliases, platform_count, status, scope, next_index, checked_count, found_count, last_platform, created_at, finished_at, expires_at, error_message").eq("id", scanId).eq("token_hash", tokenHash).maybeSingle();
   if (error) throw new Error(error.message);
   if (!data || new Date(data.expires_at).getTime() < Date.now()) throw new HttpError(404, "Scan not found or expired.");
   return data;
@@ -247,8 +260,10 @@ async function checkPlatform(platform: Platform, alias: string): Promise<JsonRec
   else if (fetched.status === platform.errorCode || fetched.status === 404 || fetched.status === 410) { status = "not_found"; message = "Profile not found"; }
   else if (platform.detection === "message") {
     const missing = platform.errorMessages.some(text => text && fetched.body.includes(text));
-    status = missing ? "not_found" : (fetched.status >= 200 && fetched.status < 400 ? "found" : "uncertain");
-    message = missing ? "Platform returned its missing-profile marker" : "Public profile response matched";
+    const required = Array.isArray(platform.presenceMessages) ? platform.presenceMessages : [];
+    const present = !required.length || required.some(text => text && fetched.body.includes(text));
+    status = missing ? "not_found" : (present && fetched.status >= 200 && fetched.status < 400 ? "found" : "uncertain");
+    message = missing ? "Platform returned its missing-profile marker" : (present ? "Public profile response matched" : "Profile marker could not be confirmed");
   } else if (platform.detection === "response_url" && platform.errorUrl) {
     let missing = false;
     try {
@@ -270,7 +285,7 @@ async function checkPlatform(platform: Platform, alias: string): Promise<JsonRec
 }
 
 function baseResult(platform: Platform, alias: string, profileUrl: string, status: ScanStatus, message: string, responseMs: number): JsonRecord {
-  return { platformId: platform.id, platform: platform.name, category: platform.category, alias, profileUrl, status, message, responseMs, metrics: {}, recentItems: [], contentCount: 0 };
+  return { platformId: platform.id, platform: platform.name, category: platform.category, region: platform.region, alias, profileUrl, status, message, responseMs, metrics: {}, recentItems: [], contentCount: 0 };
 }
 
 function genericMetadata(body: string): JsonRecord {
@@ -380,42 +395,150 @@ async function pool<T, R>(items: T[], concurrency: number, worker: (item: T) => 
   return results;
 }
 
-async function handleStart(req: Request, body: JsonRecord, key: string) {
+function aliasAllowed(platform: Platform, aliases: string[]): boolean {
+  if (!platform.regex) return true;
+  try {
+    const pattern = new RegExp(platform.regex);
+    return aliases.some(alias => pattern.test(alias));
+  } catch { return true; }
+}
+
+async function workerSignature(scanId: string): Promise<string> {
+  return sha256(`${getSecretKey()}|scan-worker|${scanId}`);
+}
+
+function constantTimeEqual(left: string, right: string): boolean {
+  if (left.length !== right.length) return false;
+  let difference = 0;
+  for (let index = 0; index < left.length; index++) difference |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  return difference === 0;
+}
+
+async function invokeWorker(scanId: string): Promise<void> {
+  const endpoint = `${Deno.env.get("SUPABASE_URL")}/functions/v1/alias-scan`;
+  const headers = {
+    "content-type": "application/json",
+    "apikey": getPublishableKey(),
+    "x-worker-signature": await workerSignature(scanId)
+  };
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const response = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify({ action: "__worker", scanId }) });
+      if (response.ok) return;
+      throw new Error(`Worker continuation returned ${response.status}`);
+    } catch (error) {
+      if (attempt === 1) throw error;
+      await new Promise(resolve => setTimeout(resolve, 700));
+    }
+  }
+}
+
+async function runWorker(scanId: string): Promise<void> {
+  try {
+    const { data: scan, error } = await supabase.from("scans")
+      .select("id, aliases, platform_ids, platform_count, next_index, found_count, status, worker_attempts")
+      .eq("id", scanId).maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!scan || !["queued", "running"].includes(scan.status)) return;
+    if (scan.worker_attempts >= 100) throw new Error("Background worker attempt limit reached.");
+
+    const cursor = Number(scan.next_index || 0);
+    const ids = (scan.platform_ids as string[]).slice(cursor, cursor + WORKER_CHUNK_SIZE);
+    if (!ids.length) {
+      await supabase.from("scans").update({ status: "complete", checked_count: scan.platform_count, finished_at: new Date().toISOString(), last_heartbeat_at: new Date().toISOString() }).eq("id", scanId).in("status", ["queued", "running"]);
+      return;
+    }
+    const platforms = ids.map(id => PLATFORM_MAP.get(id)).filter(Boolean) as Platform[];
+    const heartbeat = new Date().toISOString();
+    await supabase.from("scans").update({ status: "running", last_heartbeat_at: heartbeat, error_message: null, worker_attempts: scan.worker_attempts + 1 }).eq("id", scanId).eq("next_index", cursor).in("status", ["queued", "running"]);
+
+    const aliases = scan.aliases as string[];
+    const tasks = platforms.flatMap(platform => aliases.map(alias => ({ platform, alias })));
+    const results = await pool(tasks, WORKER_CONCURRENCY, task => checkPlatform(task.platform, task.alias));
+    const rows = results.map(result => ({ scan_id: scan.id, alias: result.alias, platform_id: result.platformId, status: result.status, profile_url: result.profileUrl, response_ms: result.responseMs, result_data: result }));
+    const { error: resultError } = await supabase.from("scan_results").upsert(rows, { onConflict: "scan_id,alias,platform_id" });
+    if (resultError) throw new Error(resultError.message);
+
+    const nextIndex = cursor + platforms.length;
+    const complete = nextIndex >= scan.platform_count;
+    const found = results.filter(result => result.status === "found").length;
+    const update = {
+      status: complete ? "complete" : "running",
+      next_index: nextIndex,
+      checked_count: nextIndex,
+      found_count: Number(scan.found_count || 0) + found,
+      last_platform: platforms.at(-1)?.name || null,
+      last_heartbeat_at: new Date().toISOString(),
+      ...(complete ? { finished_at: new Date().toISOString() } : {})
+    };
+    const { data: advanced, error: updateError } = await supabase.from("scans").update(update).eq("id", scanId).eq("next_index", cursor).in("status", ["queued", "running"]).select("id").maybeSingle();
+    if (updateError) throw new Error(updateError.message);
+    if (!advanced || complete) return;
+    await invokeWorker(scanId);
+  } catch (error) {
+    const message = error instanceof Error ? error.message.slice(0, 500) : "Background worker failed";
+    console.error(`scan ${scanId}: ${message}`);
+    await supabase.from("scans").update({ status: "failed", error_message: message, finished_at: new Date().toISOString(), last_heartbeat_at: new Date().toISOString() }).eq("id", scanId).in("status", ["queued", "running"]);
+  }
+}
+
+async function handleStart(body: JsonRecord, key: string) {
   const aliases = normalizeAliases(body.aliases);
-  const platformCount = Math.min(Math.max(Number(body.platformCount) || 0, 1), PLATFORMS.length);
-  await consumeLimit(key, "start", 3, 900);
-  await consumeLimit("global", "start", 120, 3600);
+  const scope = body.scope === "deep" ? "deep" : "focused";
+  await consumeLimit(key, "start", 2, 3600);
+  await consumeLimit("global", "start", 60, 3600);
+  const selected = (scope === "deep" ? [...PLATFORMS] : PLATFORMS.slice(0, FOCUSED_SITE_COUNT)).filter(platform => aliasAllowed(platform, aliases));
+  const platformIds = selected.map(platform => platform.id);
+  if (!platformIds.length) throw new HttpError(400, "No platform supports the supplied aliases.");
   const token = randomToken();
   const tokenHash = await sha256(token);
-  const { data, error } = await supabase.from("scans").insert({ token_hash: tokenHash, client_hash: key, aliases, alias_count: aliases.length, platform_count: platformCount, status: "running" }).select("id, expires_at").single();
+  const { data, error } = await supabase.from("scans").insert({
+    token_hash: tokenHash,
+    client_hash: key,
+    aliases,
+    alias_count: aliases.length,
+    scope,
+    platform_ids: platformIds,
+    platform_count: platformIds.length,
+    status: "queued",
+    last_heartbeat_at: new Date().toISOString()
+  }).select("id, expires_at, platform_count").single();
   if (error) throw new Error(error.message);
-  return { scanId: data.id, scanToken: token, expiresAt: data.expires_at, maxBatchSize: MAX_BATCH };
+  EdgeRuntime.waitUntil(runWorker(data.id));
+  return { scanId: data.id, scanToken: token, expiresAt: data.expires_at, platformCount: data.platform_count, status: "queued" };
 }
 
-async function handleBatch(body: JsonRecord, key: string) {
+async function handleStatus(body: JsonRecord) {
   const scan = await verifyScan(body.scanId, body.scanToken);
-  const aliases = normalizeAliases(body.aliases);
-  if (JSON.stringify(aliases) !== JSON.stringify(scan.aliases)) throw new HttpError(403, "Aliases do not match this scan.");
-  if (!Array.isArray(body.platformIds) || body.platformIds.length < 1 || body.platformIds.length > MAX_BATCH) throw new HttpError(400, `Each batch must contain 1–${MAX_BATCH} platform IDs.`);
-  const ids = [...new Set(body.platformIds.map(String))];
-  if (ids.length !== body.platformIds.length) throw new HttpError(400, "Duplicate platform IDs are not allowed.");
-  const platforms = ids.map(id => PLATFORM_MAP.get(id));
-  if (platforms.some(item => !item)) throw new HttpError(400, "Unknown platform ID.");
-  await consumeLimit(key, "batch", 80, 900);
-  await consumeLimit("global", "batch", 900, 60);
-  const tasks = (platforms as Platform[]).flatMap(platform => aliases.map(alias => ({ platform, alias })));
-  const results = await pool(tasks, 3, task => checkPlatform(task.platform, task.alias));
-  const rows = results.map(result => ({ scan_id: scan.id, alias: result.alias, platform_id: result.platformId, status: result.status, profile_url: result.profileUrl, response_ms: result.responseMs, result_data: result }));
-  const { error } = await supabase.from("scan_results").upsert(rows, { onConflict: "scan_id,alias,platform_id" });
+  const afterId = Math.max(0, Math.floor(Number(body.afterId) || 0));
+  const { data, error } = await supabase.from("scan_results").select("id, result_data").eq("scan_id", scan.id).gt("id", afterId).order("id", { ascending: true }).limit(250);
   if (error) throw new Error(error.message);
-  return { results, retryAfterMs: 450 };
+  const rows = data || [];
+  const lastResultId = rows.length ? rows.at(-1)!.id : afterId;
+  return {
+    scanId: scan.id,
+    aliases: scan.aliases,
+    scope: scan.scope,
+    status: scan.status,
+    platformCount: scan.platform_count,
+    checkedCount: scan.checked_count,
+    foundCount: scan.found_count,
+    lastPlatform: scan.last_platform,
+    createdAt: scan.created_at,
+    finishedAt: scan.finished_at,
+    error: scan.error_message,
+    results: rows.map(row => row.result_data),
+    lastResultId,
+    hasMore: rows.length === 250
+  };
 }
 
-async function handleFinish(body: JsonRecord) {
+async function handleStop(body: JsonRecord) {
   const scan = await verifyScan(body.scanId, body.scanToken);
-  const { error } = await supabase.from("scans").update({ status: "complete", finished_at: new Date().toISOString() }).eq("id", scan.id);
+  if (["complete", "failed", "stopped"].includes(scan.status)) return { status: scan.status };
+  const { error } = await supabase.from("scans").update({ status: "stopped", finished_at: new Date().toISOString() }).eq("id", scan.id).in("status", ["queued", "running"]);
   if (error) throw new Error(error.message);
-  return { complete: true };
+  return { status: "stopped" };
 }
 
 function escapeHtml(value: unknown): string {
@@ -454,18 +577,27 @@ Deno.serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders(origin) });
   }
   if (req.method !== "POST") return json(origin, { error: "Method not allowed" }, 405);
-  if (!origin || !ALLOWED_ORIGINS.has(origin)) return json(origin, { error: "Origin not allowed" }, 403);
-  if (!hasValidPublishableKey(req)) return json(origin, { error: "Invalid application key" }, 401);
   try {
     const length = Number(req.headers.get("content-length") || 0);
     if (length > 16_384) throw new HttpError(413, "Request body is too large.");
     const body = await req.json() as JsonRecord;
     const action = String(body.action || "");
+    if (action === "__worker") {
+      const scanId = String(body.scanId || "");
+      if (!/^[0-9a-f-]{36}$/i.test(scanId)) throw new HttpError(400, "Invalid worker job.");
+      const supplied = req.headers.get("x-worker-signature") || "";
+      const expected = await workerSignature(scanId);
+      if (!constantTimeEqual(supplied, expected)) throw new HttpError(403, "Invalid worker signature.");
+      EdgeRuntime.waitUntil(runWorker(scanId));
+      return json(origin, { accepted: true }, 202);
+    }
+    if (!origin || !ALLOWED_ORIGINS.has(origin)) throw new HttpError(403, "Origin not allowed");
+    if (!hasValidPublishableKey(req)) throw new HttpError(401, "Invalid application key");
     const key = await requestKey(req);
     let result: unknown;
-    if (action === "start") result = await handleStart(req, body, key);
-    else if (action === "scan-batch") result = await handleBatch(body, key);
-    else if (action === "finish") result = await handleFinish(body);
+    if (action === "start") result = await handleStart(body, key);
+    else if (action === "status") result = await handleStatus(body);
+    else if (action === "stop") result = await handleStop(body);
     else if (action === "email-report") result = await handleEmail(body, key);
     else throw new HttpError(400, "Unknown action.");
     return json(origin, result);
