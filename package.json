@@ -5,6 +5,6 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "check": "node --check app.js && node --check sites.js && node --check sniper.js && node --check claim-platforms.js && node --check claim-platforms-1.6.js && node scripts/validate-catalogue.mjs"
+    "check": "node --check app.js && node --check sites.js && node --check sniper.js && node --check claim-platforms.js && node --check claim-platforms-1.6.js && node --check supabase/functions/alias-scan/url-safety.js && node scripts/validate-catalogue.mjs"
   }
 }

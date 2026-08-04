@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { FOCUSED_SITE_COUNT, PLATFORMS } from "./catalogue.ts";
 import { CLAIM_PLATFORM_IDS } from "./claim-platform-ids.ts";
+import { isPrivateHost } from "./url-safety.js";
 
 declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
 
@@ -138,16 +139,6 @@ function fillTemplate(value: unknown, alias: string): unknown {
   return value;
 }
 
-function isPrivateHost(hostname: string): boolean {
-  const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
-  if (host === "localhost" || host.endsWith(".local") || host === "0.0.0.0" || host === "::1") return true;
-  if (/^(10\.|127\.|169\.254\.|192\.168\.)/.test(host)) return true;
-  const match = host.match(/^172\.(\d+)\./);
-  if (match && Number(match[1]) >= 16 && Number(match[1]) <= 31) return true;
-  if (/^(fc|fd|fe8|fe9|fea|feb)/i.test(host)) return true;
-  return false;
-}
-
 function buildPlatformUrl(template: string, alias: string): URL {
   const encoded = encodeURIComponent(alias);
   const url = new URL(template.replaceAll("{}", encoded));
@@ -238,7 +229,9 @@ function decodeEntities(value: string): string {
 
 async function checkPlatform(platform: Platform, alias: string): Promise<JsonRecord> {
   const started = performance.now();
-  const profileUrl = buildPlatformUrl(platform.profileUrl, alias);
+  let profileUrl: URL;
+  try { profileUrl = buildPlatformUrl(platform.profileUrl, alias); }
+  catch { return baseResult(platform, alias, "", "error", "Unsafe platform configuration", 0); }
   let probeUrl: URL;
   try { probeUrl = buildPlatformUrl(platform.probeUrl || platform.profileUrl, alias); }
   catch { probeUrl = profileUrl; }

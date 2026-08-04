@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { CLAIM_PLATFORMS } from "../claim-platforms.js";
+import { isPrivateHost } from "../supabase/functions/alias-scan/url-safety.js";
 
 const catalogue = JSON.parse(await readFile("data/platforms.json", "utf8"));
 const claimServerSource = await readFile("supabase/functions/alias-scan/claim-platform-ids.ts", "utf8");
@@ -9,7 +10,10 @@ for (const site of catalogue.sites) {
   if (!site.id || ids.has(site.id)) throw new Error(`Duplicate or missing platform ID: ${site.id}`);
   if (!String(site.profileUrl).startsWith("https://")) throw new Error(`Non-HTTPS platform: ${site.name}`);
   if (!JSON.stringify(site).includes("{}")) throw new Error(`Missing alias placeholder: ${site.name}`);
-  if (site.profileUrl.includes("127.0.0.1") || site.profileUrl.includes("localhost")) throw new Error(`Unsafe platform: ${site.name}`);
+  for (const template of [site.profileUrl, site.probeUrl].filter(Boolean)) {
+    const url = new URL(String(template).replaceAll("{}", "catalogue-safety-check"));
+    if (url.protocol !== "https:" || isPrivateHost(url.hostname)) throw new Error(`Unsafe platform: ${site.name}`);
+  }
   if (![1, 2, 3, 4].includes(site.priority)) throw new Error(`Invalid priority: ${site.name}`);
   ids.add(site.id);
 }
@@ -24,4 +28,10 @@ for (const platform of CLAIM_PLATFORMS) {
 }
 const serverClaimIds = [...claimServerSource.matchAll(/"([a-z0-9-]+)"/g)].map(match => match[1]);
 if (serverClaimIds.length !== claimIds.size || serverClaimIds.some(id => !claimIds.has(id))) throw new Error("Browser and Edge claim platform allowlists differ.");
+for (const hostname of ["localhost", "api.localhost", "127.0.0.1", "10.0.0.1", "172.16.0.1", "192.168.1.1", "[fc00::1]", "[fe80::1]"]) {
+  if (!isPrivateHost(hostname)) throw new Error(`Private host regression: ${hostname}`);
+}
+for (const hostname of ["fclmnews.ru", "fediverse.party", "fd.nl"]) {
+  if (isPrivateHost(hostname)) throw new Error(`Public host rejected as private: ${hostname}`);
+}
 console.log(`Validated ${catalogue.sites.length} HTTPS platform definitions.`);
