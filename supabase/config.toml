@@ -1,0 +1,5 @@
+project_id = "aliastrace"
+
+[functions.alias-scan]
+verify_jwt = false
+import_map = "./functions/alias-scan/deno.json"
