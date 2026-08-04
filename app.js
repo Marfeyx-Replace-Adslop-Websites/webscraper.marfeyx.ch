@@ -15,6 +15,7 @@ const state = {
   timer: null,
   lastResultId: 0,
   platformTotal: 0,
+  checkedTotal: 0,
   activeAlias: "all",
   visibleLimit: 24
 };
@@ -145,6 +146,7 @@ function resetScan() {
   state.visibleLimit = 24;
   state.lastResultId = 0;
   state.platformTotal = 0;
+  state.checkedTotal = 0;
   $("#live-platforms").replaceChildren();
   $("#progress-title").textContent = "Mapping public profiles";
   $("#progress-label").textContent = "Preparing platform catalogue…";
@@ -241,6 +243,7 @@ async function pollScan() {
       afterId: state.lastResultId
     }, state.controller.signal);
     state.platformTotal = payload.platformCount || state.platformTotal;
+    state.checkedTotal = payload.checkedCount || 0;
     state.lastResultId = payload.lastResultId || state.lastResultId;
     const fresh = mergeResults(Array.isArray(payload.results) ? payload.results : []);
     renderLive(fresh);
@@ -322,6 +325,7 @@ function startTimer() {
 }
 
 function updateProgress(checked, total, foundCount = null) {
+  state.checkedTotal = checked;
   const percent = total ? Math.round((checked / total) * 100) : 0;
   $("#progress-percent").textContent = `${percent}%`;
   $("#progress-bar").style.width = `${percent}%`;
@@ -363,11 +367,12 @@ function renderResults() {
   const uncertain = state.results.filter(item => item.status === "uncertain");
   const content = found.reduce((sum, item) => sum + resultContentCount(item), 0);
   const uniquePlatforms = new Set(state.results.map(item => item.platformId)).size;
+  const checkedPlatforms = state.checkedTotal || uniquePlatforms;
   const possible = found.length + uncertain.length;
   $("#stat-found").textContent = found.length;
   $("#stat-content").textContent = compactNumber(content);
-  $("#stat-checked").textContent = uniquePlatforms;
-  $("#stat-coverage").textContent = `${Math.round(uniquePlatforms / Math.max(state.platformTotal || state.catalogue.length, 1) * 100)}% selected-scan coverage`;
+  $("#stat-checked").textContent = checkedPlatforms;
+  $("#stat-coverage").textContent = `${Math.round(checkedPlatforms / Math.max(state.platformTotal || state.catalogue.length, 1) * 100)}% selected-scan coverage`;
   $("#stat-confidence").textContent = possible ? `${Math.round(found.length / possible * 100)}%` : "—";
   $("#results-summary").textContent = `${state.aliases.map(alias => `@${alias}`).join(", ")} produced ${found.length} confirmed profile${found.length === 1 ? "" : "s"} and ${uncertain.length} uncertain check${uncertain.length === 1 ? "" : "s"}.`;
   renderAliasTabs();
@@ -514,7 +519,7 @@ function downloadReport() {
     product: "Marfeyx' Webscraper",
     generatedAt: new Date().toISOString(),
     aliases: state.aliases,
-    checkedPlatforms: new Set(state.results.map(item => item.platformId)).size,
+    checkedPlatforms: state.checkedTotal || new Set(state.results.map(item => item.platformId)).size,
     methodology: "Allowlisted public profile and API checks. Confirmed and uncertain results are separated.",
     results: state.results
   };

@@ -455,9 +455,13 @@ async function runWorker(scanId: string): Promise<void> {
     const aliases = scan.aliases as string[];
     const tasks = platforms.flatMap(platform => aliases.map(alias => ({ platform, alias })));
     const results = await pool(tasks, WORKER_CONCURRENCY, task => checkPlatform(task.platform, task.alias));
-    const rows = results.map(result => ({ scan_id: scan.id, alias: result.alias, platform_id: result.platformId, status: result.status, profile_url: result.profileUrl, response_ms: result.responseMs, result_data: result }));
-    const { error: resultError } = await supabase.from("scan_results").upsert(rows, { onConflict: "scan_id,alias,platform_id" });
-    if (resultError) throw new Error(resultError.message);
+    const rows = results
+      .filter(result => result.status === "found" || result.status === "uncertain")
+      .map(result => ({ scan_id: scan.id, alias: result.alias, platform_id: result.platformId, status: result.status, profile_url: result.profileUrl, response_ms: result.responseMs, result_data: result }));
+    if (rows.length) {
+      const { error: resultError } = await supabase.from("scan_results").upsert(rows, { onConflict: "scan_id,alias,platform_id" });
+      if (resultError) throw new Error(resultError.message);
+    }
 
     const nextIndex = cursor + platforms.length;
     const complete = nextIndex >= scan.platform_count;

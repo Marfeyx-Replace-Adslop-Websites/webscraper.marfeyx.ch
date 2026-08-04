@@ -10,7 +10,7 @@ Marfeyx' Webscraper searches up to three aliases across a curated catalogue of 1
 - `supabase/migrations`: RLS-protected, 24-hour scan storage and atomic rate limits
 - `.github/workflows/pages.yml`: validates and deploys only the static `dist/` artifact
 
-The Edge Function selects platform IDs server-side—never URLs supplied by the browser. It processes resumable chunks in the background, so closing the page does not cancel a scan. Requests use bounded concurrency, strict timeouts, manual redirects, fixed methods, payload limits and per-client/global rate limits. Focused mode checks 600 priority platforms; deep mode checks the full catalogue.
+The Edge Function selects platform IDs server-side—never URLs supplied by the browser. It processes resumable chunks in the background, so closing the page does not cancel a scan. Only confirmed and uncertain matches are retained as result rows; ordinary misses and request failures become compact counters. Requests use bounded concurrency, strict timeouts, manual redirects, fixed methods, payload limits and per-client/global rate limits. Focused mode checks 600 priority platforms; deep mode checks the full catalogue.
 
 ## Configure Supabase
 
