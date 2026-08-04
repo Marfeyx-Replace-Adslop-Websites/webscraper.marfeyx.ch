@@ -1,27 +1,36 @@
-alter table public.scans drop constraint scans_platform_count_check;
-alter table public.scans drop constraint scans_status_check;
-
 alter table public.scans
   alter column status set default 'queued',
-  add column scope text not null default 'focused' check (scope in ('focused', 'deep')),
-  add column platform_ids text[] not null default '{}',
-  add column next_index integer not null default 0 check (next_index >= 0),
-  add column checked_count integer not null default 0 check (checked_count >= 0),
-  add column found_count integer not null default 0 check (found_count >= 0),
-  add column last_platform text,
-  add column last_heartbeat_at timestamptz,
-  add column error_message text,
-  add column worker_attempts smallint not null default 0 check (worker_attempts between 0 and 100);
+  add column if not exists scope text not null default 'focused',
+  add column if not exists platform_ids text[] not null default '{}',
+  add column if not exists next_index integer not null default 0,
+  add column if not exists checked_count integer not null default 0,
+  add column if not exists found_count integer not null default 0,
+  add column if not exists last_platform text,
+  add column if not exists last_heartbeat_at timestamptz,
+  add column if not exists error_message text,
+  add column if not exists worker_attempts smallint not null default 0;
+
+alter table public.scans
+  drop constraint if exists scans_platform_count_check,
+  drop constraint if exists scans_status_check,
+  drop constraint if exists scans_cursor_check,
+  drop constraint if exists scans_platform_ids_check,
+  drop constraint if exists scans_scope_check,
+  drop constraint if exists scans_next_index_check,
+  drop constraint if exists scans_checked_count_check,
+  drop constraint if exists scans_found_count_check,
+  drop constraint if exists scans_worker_attempts_check;
 
 alter table public.scans
   add constraint scans_platform_count_check check (platform_count between 1 and 2500),
   add constraint scans_status_check check (status in ('queued', 'running', 'complete', 'stopped', 'failed')),
+  add constraint scans_scope_check check (scope in ('focused', 'deep')),
+  add constraint scans_next_index_check check (next_index >= 0),
+  add constraint scans_checked_count_check check (checked_count >= 0),
+  add constraint scans_found_count_check check (found_count >= 0),
+  add constraint scans_worker_attempts_check check (worker_attempts between 0 and 100),
   add constraint scans_cursor_check check (next_index <= platform_count),
   add constraint scans_platform_ids_check check (cardinality(platform_ids) in (0, platform_count));
-
-create index scans_worker_status_idx
-  on public.scans (status, last_heartbeat_at)
-  where status in ('queued', 'running');
 
 comment on column public.scans.platform_ids is 'Server-selected allowlisted platform IDs in execution priority order.';
 comment on column public.scans.next_index is 'Next platform index for resumable background processing.';
