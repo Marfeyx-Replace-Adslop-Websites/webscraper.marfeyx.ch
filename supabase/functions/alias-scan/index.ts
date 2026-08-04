@@ -20,6 +20,7 @@ const MAX_RESPONSE_BYTES = 96_000;
 const ALIAS_PATTERN = /^[\p{L}\p{N}][\p{L}\p{N}._-]{0,31}$/u;
 const ALLOWED_ORIGINS = new Set([
   "https://webscraper.marfeyx.ch",
+  "https://usernamesniper.marfeyx.ch",
   "https://marfeyx.github.io",
   "http://localhost:8000",
   "http://127.0.0.1:8000",
@@ -618,18 +619,42 @@ async function handleEmail(body: JsonRecord, key: string) {
   const scan = await verifyScan(body.scanId, body.scanToken);
   const email = String(body.email || "").trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length > 254) throw new HttpError(400, "Enter a valid email address.");
-  await consumeLimit(key, "email", 2, 3600);
+
   const apiKey = Deno.env.get("RESEND_API_KEY");
-  if (!apiKey) throw new HttpError(503, "Automatic email delivery is not configured.");
+  if (!apiKey) throw new HttpError(503, "Automatic email delivery is temporarily unavailable.");
+  await consumeLimit(key, "email", 2, 3600);
+
   const { data, error } = await supabase.from("scan_results").select("result_data").eq("scan_id", scan.id).order("created_at", { ascending: true });
   if (error) throw new Error(error.message);
   const results = (data || []).map((row: { result_data: JsonRecord }) => row.result_data);
+  const recipientHash = await sha256(email);
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
-    headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json", "user-agent": USER_AGENT },
-    body: JSON.stringify({ from: Deno.env.get("REPORT_FROM") || "Marfeyx Webscraper <reports@marfeyx.ch>", to: [email], subject: `Marfeyx' Webscraper report for ${(scan.aliases as string[]).join(", ")}`, html: emailHtml(scan.aliases as string[], results) })
+    headers: {
+      authorization: `Bearer ${apiKey}`,
+      "content-type": "application/json",
+      "idempotency-key": `scan-report/${scan.id}/${recipientHash}`,
+      "user-agent": USER_AGENT
+    },
+    body: JSON.stringify({
+      from: Deno.env.get("REPORT_FROM") || "Marfeyx Webscraper <reports@marfeyx.ch>",
+      to: [email],
+      reply_to: "dev@marfeyx.ch",
+      subject: `Marfeyx' Webscraper report for ${(scan.aliases as string[]).join(", ")}`,
+      html: emailHtml(scan.aliases as string[], results)
+    })
   });
-  if (!response.ok) throw new HttpError(502, "The email provider rejected the delivery request.");
+
+  const providerText = await response.text();
+  if (!response.ok) {
+    let providerCode = "unknown";
+    try {
+      const parsed = JSON.parse(providerText) as { name?: string; code?: string };
+      providerCode = parsed.name || parsed.code || providerCode;
+    } catch { /* response was not JSON */ }
+    console.error(`Resend delivery failed (${response.status}, ${providerCode})`);
+    throw new HttpError(502, "The email provider rejected the delivery request.");
+  }
   return { message: "Report sent. Check your inbox and spam folder." };
 }
 

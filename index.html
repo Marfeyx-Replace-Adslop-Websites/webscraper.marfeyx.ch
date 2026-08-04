@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Search up to three usernames across more than 1,700 public platforms and build a private, source-linked online footprint report.">
   <meta name="theme-color" content="#080914">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' mailto:; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
   <title>Marfeyx' Webscraper — Search your public footprint</title>
   <link rel="icon" href="assets/marfeyx-avatar.jpg" type="image/jpeg">
   <link rel="apple-touch-icon" href="assets/marfeyx-avatar.jpg">
-  <link rel="stylesheet" href="styles-1.6.css">
+  <link rel="stylesheet" href="styles-1.7.css">
 </head>
 <body>
   <div class="noise" aria-hidden="true"></div>
@@ -154,7 +154,7 @@
 
   <dialog id="email-dialog" class="modal">
     <form id="email-form" method="dialog">
-      <button class="modal-close" type="submit" value="cancel" aria-label="Close">×</button>
+      <button id="email-dialog-close" class="modal-close" type="button" aria-label="Close">×</button>
       <span class="kicker">Report delivery</span><h2>Send the report</h2><p>Enter an address for this report only. It is removed after delivery.</p>
       <label for="report-email">Email address</label><input id="report-email" type="email" autocomplete="email" maxlength="254" placeholder="you@example.com" required>
       <label class="consent"><input id="email-consent" type="checkbox" required><span>I understand this email will receive public-profile research for the aliases in this scan.</span></label>
@@ -164,7 +164,7 @@
   </dialog>
 
   <noscript><div class="noscript">Marfeyx' Webscraper requires JavaScript to run a scan.</div></noscript>
-  <script src="config.js?v=1.6.0"></script>
-  <script type="module" src="app-1.6.js"></script>
+  <script src="config.js?v=1.7.0"></script>
+  <script type="module" src="app-1.7.js"></script>
 </body>
 </html>

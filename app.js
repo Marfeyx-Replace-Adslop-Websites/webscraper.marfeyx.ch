@@ -2,6 +2,7 @@ const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
 const config = window.WEBSCRAPER_CONFIG || {};
+const RESULT_PAGE_SIZE = matchMedia("(max-width: 640px)").matches ? 8 : 12;
 const state = {
   aliases: [],
   catalogue: [],
@@ -17,7 +18,7 @@ const state = {
   platformTotal: 0,
   checkedTotal: 0,
   activeAlias: "all",
-  visibleLimit: 24
+  visibleLimit: RESULT_PAGE_SIZE
 };
 
 const form = $("#scan-form");
@@ -143,7 +144,7 @@ function resetScan() {
   state.scanId = null;
   state.scanToken = null;
   state.stopped = false;
-  state.visibleLimit = 24;
+  state.visibleLimit = RESULT_PAGE_SIZE;
   state.lastResultId = 0;
   state.platformTotal = 0;
   state.checkedTotal = 0;
@@ -391,7 +392,7 @@ function renderAliasTabs() {
     button.textContent = value === "all" ? "All aliases" : `@${value}`;
     button.addEventListener("click", () => {
       state.activeAlias = value;
-      state.visibleLimit = 24;
+      state.visibleLimit = RESULT_PAGE_SIZE;
       renderAliasTabs();
       renderResultCards();
     });
@@ -399,7 +400,7 @@ function renderAliasTabs() {
   }));
 }
 
-function renderResultCards() {
+function renderResultCards({ append = false } = {}) {
   const query = $("#result-filter").value.trim().toLowerCase();
   const status = $("#status-filter").value;
   const order = { found: 0, uncertain: 1, error: 2, not_found: 3 };
@@ -415,6 +416,11 @@ function renderResultCards() {
     empty.className = "empty-results";
     empty.textContent = status === "found" ? "No confirmed profiles match this filter." : "No results match this filter.";
     grid.replaceChildren(empty);
+  } else if (append) {
+    const rendered = grid.querySelectorAll(".result-card").length;
+    const fragment = document.createDocumentFragment();
+    page.slice(rendered).forEach(result => fragment.append(createResultCard(result)));
+    grid.append(fragment);
   } else {
     grid.replaceChildren(...page.map(createResultCard));
   }
@@ -432,7 +438,11 @@ function createResultCard(result) {
     const image = document.createElement("img");
     image.src = result.avatarUrl;
     image.alt = "";
+    image.width = 42;
+    image.height = 42;
     image.loading = "lazy";
+    image.decoding = "async";
+    image.fetchPriority = "low";
     image.referrerPolicy = "no-referrer";
     image.addEventListener("error", () => image.replaceWith(document.createTextNode(result.platform.slice(0, 1).toUpperCase())));
     avatar.append(image);
@@ -499,7 +509,7 @@ function compactNumber(value) { return new Intl.NumberFormat("en", { notation: v
 function celebrate() {
   const holder = $("#celebration");
   holder.replaceChildren();
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (matchMedia("(prefers-reduced-motion: reduce), (max-width: 640px)").matches) return;
   const colors = ["#9b7cff", "#658bff", "#6ee7ee", "#59d9a4", "#f5c86d"];
   for (let i = 0; i < 46; i++) {
     const piece = document.createElement("i");
@@ -536,22 +546,27 @@ async function sendEmail(event) {
   event.preventDefault();
   const email = $("#report-email").value.trim();
   const status = $("#email-status");
-  if (!$("#email-consent").checked || !$("#report-email").checkValidity()) return;
+  if (!$("#email-consent").checked || !$("#report-email").checkValidity()) {
+    $("#email-form").reportValidity();
+    return;
+  }
   const button = $("#send-email-button");
   button.disabled = true;
+  status.style.color = "";
   status.textContent = "Preparing the report…";
   try {
     const response = await api({ action: "email-report", scanId: state.scanId, scanToken: state.scanToken, email });
     status.style.color = "var(--green)";
     status.textContent = response.message || "Report queued for delivery.";
-    setTimeout(() => $("#email-dialog").close(), 1600);
+    setTimeout(() => {
+      const dialog = $("#email-dialog");
+      if (dialog.open) dialog.close();
+    }, 1600);
   } catch (error) {
-    if (error.status === 503) {
-      const subject = encodeURIComponent(`Marfeyx' Webscraper report for ${state.aliases.join(", ")}`);
-      const body = encodeURIComponent(`The automatic email provider is not configured. Download your report from Marfeyx' Webscraper and attach it here.\n\nAliases: ${state.aliases.join(", ")}`);
-      location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-      status.textContent = "Opened your email app as a fallback.";
-    } else status.textContent = error.message;
+    status.style.color = "var(--red)";
+    status.textContent = error.status === 503
+      ? "Automatic delivery is temporarily unavailable. Download the JSON report and try again later."
+      : error.message;
   } finally { button.disabled = false; }
 }
 
@@ -597,11 +612,24 @@ $("#stop-scan").addEventListener("click", async () => {
   clearActiveScan();
   state.controller?.abort();
 });
-$("#result-filter").addEventListener("input", () => { state.visibleLimit = 24; renderResultCards(); });
-$("#status-filter").addEventListener("change", () => { state.visibleLimit = 24; renderResultCards(); });
-$("#load-more").addEventListener("click", () => { state.visibleLimit += 24; renderResultCards(); });
+$("#result-filter").addEventListener("input", () => { state.visibleLimit = RESULT_PAGE_SIZE; renderResultCards(); });
+$("#status-filter").addEventListener("change", () => { state.visibleLimit = RESULT_PAGE_SIZE; renderResultCards(); });
+$("#load-more").addEventListener("click", () => {
+  state.visibleLimit += RESULT_PAGE_SIZE;
+  renderResultCards({ append: true });
+});
 $("#download-report-button").addEventListener("click", downloadReport);
-$("#email-report-button").addEventListener("click", () => $("#email-dialog").showModal());
+const emailDialog = $("#email-dialog");
+$("#email-report-button").addEventListener("click", () => {
+  const status = $("#email-status");
+  status.textContent = "";
+  status.style.color = "";
+  emailDialog.showModal();
+});
+$("#email-dialog-close").addEventListener("click", () => emailDialog.close());
+emailDialog.addEventListener("click", event => {
+  if (event.target === emailDialog) emailDialog.close();
+});
 $("#email-form").addEventListener("submit", sendEmail);
 $("#year").textContent = new Date().getFullYear();
 
