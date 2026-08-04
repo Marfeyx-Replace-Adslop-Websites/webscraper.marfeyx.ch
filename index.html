@@ -9,7 +9,7 @@
   <title>Marfeyx' Webscraper — Search your public footprint</title>
   <link rel="icon" href="assets/marfeyx-avatar.jpg" type="image/jpeg">
   <link rel="apple-touch-icon" href="assets/marfeyx-avatar.jpg">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=1.3.0">
 </head>
 <body>
   <div class="noise" aria-hidden="true"></div>
@@ -69,7 +69,10 @@
         <button id="stop-scan" class="ghost-button" type="button">Stop</button>
       </div>
       <div class="progress-card">
-        <div class="radar" aria-hidden="true"><i></i><i></i><i></i><b></b></div>
+        <div class="radar-wrap" aria-hidden="true">
+          <div class="radar"><span></span><i></i><i></i><i></i><b></b></div>
+          <small><em></em> Live network</small>
+        </div>
         <div class="progress-copy">
           <div class="progress-meta"><span id="progress-label">Preparing platform catalogue…</span><strong id="progress-percent">0%</strong></div>
           <div class="progress-track"><span id="progress-bar"></span></div>
@@ -158,7 +161,7 @@
   </dialog>
 
   <noscript><div class="noscript">Marfeyx' Webscraper requires JavaScript to run a scan.</div></noscript>
-  <script src="config.js"></script>
-  <script type="module" src="app.js"></script>
+  <script src="config.js?v=1.3.0"></script>
+  <script type="module" src="app.js?v=1.3.0"></script>
 </body>
 </html>

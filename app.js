@@ -248,7 +248,7 @@ async function pollScan() {
     const fresh = mergeResults(Array.isArray(payload.results) ? payload.results : []);
     renderLive(fresh);
     updateProgress(payload.checkedCount || 0, state.platformTotal, payload.foundCount);
-    if (payload.lastPlatform) $("#progress-label").textContent = `Checked through ${payload.lastPlatform}`;
+    if (payload.lastPlatform) $("#progress-label").textContent = `Scanning ${payload.lastPlatform}`;
     else $("#progress-label").textContent = payload.status === "queued" ? "Starting secure background workers…" : "Checking priority platforms…";
     saveActiveScan();
 
