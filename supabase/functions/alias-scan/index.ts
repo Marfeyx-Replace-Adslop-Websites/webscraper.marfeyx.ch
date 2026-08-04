@@ -30,6 +30,24 @@ const POPULAR_PLATFORM_IDS = [
   "quora",
   "spotify",
   "soundcloud",
+  "fortnitetracker",
+  "battlefield-2042-tracker",
+  "battlefield-v-tracker",
+  "battlefield-1-tracker",
+  "minecraft",
+  "mcuuid",
+  "halo-infinite-tracker",
+  "rocket-league-tracker",
+  "rainbow-six-siege-tracker",
+  "cs2-tracker",
+  "apexlegends",
+  "faceit",
+  "psnprofiles-com",
+  "op-gg-pubg",
+  "op-gg-valorant",
+  "runescape",
+  "osu",
+  "tetr-io",
   "steam-community-user",
   "roblox",
   "xbox-gamertag",
@@ -73,7 +91,7 @@ const ALLOWED_ORIGINS = new Set([
   "http://127.0.0.1:8000",
   "http://localhost:4173"
 ]);
-const USER_AGENT = "MarfeyxWebscraper/1.9 (+https://webscraper.marfeyx.ch; contact: dev@marfeyx.ch)";
+const USER_AGENT = "MarfeyxWebscraper/2.1 (+https://webscraper.marfeyx.ch; contact: dev@marfeyx.ch)";
 
 function getSecretKey(): string {
   const legacy = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");

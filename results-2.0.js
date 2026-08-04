@@ -3,7 +3,7 @@ const config = window.WEBSCRAPER_CONFIG || {};
 const RESULT_KEY = "marfeyx-completed-scan-v1";
 const MAX_AGE = 86_400_000;
 const PAGE_SIZE = matchMedia("(max-width: 640px)").matches ? 10 : 18;
-const POPULAR_IDS = ["youtube-2", "instagram", "tiktok", "facebook", "twitter-2", "reddit", "snapchat", "threads-2", "discord", "twitch-2", "telegram", "pinterest", "bluesky", "linkedin", "spotify", "steam-community-user", "roblox", "github", "gitlab"];
+const POPULAR_IDS = ["youtube-2", "instagram", "tiktok", "facebook", "twitter-2", "reddit", "snapchat", "threads-2", "discord", "twitch-2", "telegram", "pinterest", "bluesky", "linkedin", "spotify", "fortnitetracker", "battlefield-2042-tracker", "battlefield-v-tracker", "battlefield-1-tracker", "minecraft", "mcuuid", "halo-infinite-tracker", "rocket-league-tracker", "rainbow-six-siege-tracker", "cs2-tracker", "apexlegends", "faceit", "psnprofiles-com", "op-gg-pubg", "op-gg-valorant", "runescape", "osu", "tetr-io", "steam-community-user", "roblox", "xbox-gamertag", "github", "gitlab"];
 const POPULAR_ORDER = new Map(POPULAR_IDS.map((id, index) => [id, index]));
 const state = { aliases: [], results: [], scanId: null, scanToken: null, platformTotal: 0, checkedTotal: 0, partial: false, activeAlias: "all", visibleLimit: PAGE_SIZE };
 

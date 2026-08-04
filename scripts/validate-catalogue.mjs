@@ -4,6 +4,7 @@ import { isPrivateHost } from "../supabase/functions/alias-scan/url-safety.js";
 
 const catalogue = JSON.parse(await readFile("data/platforms.json", "utf8"));
 const claimServerSource = await readFile("supabase/functions/alias-scan/claim-platform-ids.ts", "utf8");
+const edgeSource = await readFile("supabase/functions/alias-scan/index.ts", "utf8");
 if (!Array.isArray(catalogue.sites) || catalogue.sites.length < 1_200) throw new Error("Catalogue must contain at least 1,200 platforms.");
 const ids = new Set();
 const russianDestination = /https:\/\/[^/?#]*\.(?:ru|su)(?:[/:?#]|$)/i;
@@ -20,6 +21,16 @@ for (const site of catalogue.sites) {
   ids.add(site.id);
 }
 if (catalogue.totalSites !== catalogue.sites.length) throw new Error("Catalogue metadata count is stale.");
+const requiredGamingIds = [
+  "fortnitetracker", "battlefield-2042-tracker", "battlefield-v-tracker", "battlefield-1-tracker",
+  "minecraft", "mcuuid", "halo-infinite-tracker", "rocket-league-tracker",
+  "rainbow-six-siege-tracker", "cs2-tracker", "apexlegends", "faceit", "psnprofiles-com"
+];
+for (const id of requiredGamingIds) {
+  const platform = catalogue.sites.find(site => site.id === id);
+  if (!platform || platform.category !== "Gaming") throw new Error(`Required gaming platform is missing: ${id}`);
+  if (!edgeSource.includes(`"${id}"`)) throw new Error(`Gaming platform is not prioritized by the Edge scanner: ${id}`);
+}
 if (!Number.isInteger(catalogue.focusedSites) || catalogue.focusedSites < 100 || catalogue.focusedSites > catalogue.sites.length) throw new Error("Focused catalogue count is invalid.");
 if (CLAIM_PLATFORMS.length < 40 || CLAIM_PLATFORMS.length > 100) throw new Error("Username Sniper must expose 40 to 100 curated platforms.");
 const claimIds = new Set();
