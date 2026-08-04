@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#080914">
+  <meta name="description" content="Check one username across major platforms and open official account-registration pages for names that appear available.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' mailto:; upgrade-insecure-requests">
+  <title>Username Sniper — Marfeyx' Webscraper</title>
+  <link rel="icon" href="assets/marfeyx-avatar.jpg" type="image/jpeg">
+  <link rel="apple-touch-icon" href="assets/marfeyx-avatar.jpg">
+  <link rel="stylesheet" href="styles-1.5.css">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <div class="orb orb-one" aria-hidden="true"></div>
+  <div class="orb orb-two" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="Marfeyx' Webscraper home">
+      <img class="brand-avatar" src="assets/marfeyx-avatar.jpg" alt="" width="36" height="36">
+      <span>Marfeyx' <span>Webscraper</span></span>
+    </a>
+    <nav aria-label="Main navigation">
+      <a href="index.html">Footprint scan</a>
+      <a class="nav-feature active" href="sniper.html" aria-current="page">Username Sniper</a>
+    </nav>
+    <a class="header-cta" href="mailto:dev@marfeyx.ch">Contact</a>
+  </header>
+
+  <main class="sniper-main">
+    <section class="sniper-hero" aria-labelledby="sniper-title">
+      <div class="sniper-intro reveal">
+        <span class="kicker">Username claim assistant</span>
+        <h1 id="sniper-title">Find it. Claim it.<br><span>Keep the name yours.</span></h1>
+        <p>Check one username across the platforms that matter, then jump directly to each official registration page. You complete every signup—because platforms get rather emotional about robots creating accounts.</p>
+      </div>
+
+      <form id="claim-form" class="claim-form reveal delay-one" novalidate>
+        <div class="claim-input-row">
+          <label for="claim-username"><span>Username</span><small>1–32 characters</small></label>
+          <div class="claim-input-shell"><span aria-hidden="true">@</span><input id="claim-username" name="username" type="text" inputmode="text" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="32" placeholder="marfeyx" required><button id="claim-submit" class="primary-button" type="submit">Check availability <span class="button-arrow" aria-hidden="true">↗</span></button></div>
+        </div>
+        <div class="claim-platform-picker">
+          <div><span>Platform groups</span><small id="selected-platform-count">Loading platforms…</small></div>
+          <div id="claim-categories" class="claim-categories" role="group" aria-label="Choose platform groups"></div>
+        </div>
+        <p class="claim-disclaimer">A missing public profile is a strong signal, not a reservation. The platform makes the final decision during signup.</p>
+        <p id="claim-error" class="form-error" role="alert"></p>
+      </form>
+
+      <div class="claim-trust-row reveal delay-two">
+        <span><b>01</b> Major US &amp; European platforms</span>
+        <span><b>02</b> No passwords collected</span>
+        <span><b>03</b> Results expire in 24 hours</span>
+      </div>
+    </section>
+
+    <section id="claim-progress" class="claim-progress" hidden aria-live="polite">
+      <div class="claim-progress-card">
+        <div class="radar-wrap" aria-hidden="true">
+          <div class="radar claim-radar"><span></span><i></i><i></i><i></i><b></b></div>
+          <small><em></em> Availability sweep</small>
+        </div>
+        <div class="claim-progress-copy">
+          <span class="kicker">Live check</span>
+          <h2 id="claim-progress-title">Checking your username</h2>
+          <div class="progress-meta"><span id="claim-progress-label">Starting secure background workers…</span><strong id="claim-progress-percent">0%</strong></div>
+          <div class="progress-track"><span id="claim-progress-bar"></span></div>
+          <div class="claim-progress-stats"><span><strong id="claim-checked">0</strong> checked</span><span><strong id="claim-available-live">0</strong> likely available</span><span><strong id="claim-elapsed">00:00</strong> elapsed</span></div>
+          <p class="background-note"><span>✓</span> Safe to close Safari. Reopen this page and the check reconnects.</p>
+          <button id="claim-stop" class="ghost-button" type="button">Stop check</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="claim-results" class="claim-results" hidden aria-labelledby="claim-results-title">
+      <div class="section-heading">
+        <div><span class="kicker">Claim board</span><h2 id="claim-results-title">Your username map</h2><p id="claim-results-summary">Open available platforms and finish registration yourself.</p></div>
+        <button id="claim-new-check" class="secondary-button" type="button">Check another name</button>
+      </div>
+      <div class="claim-stats">
+        <article class="available"><span>Likely available</span><strong id="claim-stat-available">0</strong><small>No public profile detected</small></article>
+        <article class="taken"><span>Taken</span><strong id="claim-stat-taken">0</strong><small>Public profile confirmed</small></article>
+        <article class="manual"><span>Manual check</span><strong id="claim-stat-manual">0</strong><small>Blocked or inconclusive</small></article>
+        <article class="claimed"><span>Marked claimed</span><strong id="claim-stat-claimed">0</strong><small>Saved only on this device</small></article>
+      </div>
+      <div class="claim-toolbar">
+        <div id="claim-result-filters" class="claim-result-filters" role="group" aria-label="Filter results">
+          <button class="active" type="button" data-filter="all">All</button><button type="button" data-filter="available">Available</button><button type="button" data-filter="taken">Taken</button><button type="button" data-filter="manual">Manual</button><button type="button" data-filter="claimed">Claimed</button>
+        </div>
+        <label><span class="sr-only">Search platforms</span><input id="claim-result-search" type="search" placeholder="Filter platforms…"></label>
+      </div>
+      <div id="claim-results-grid" class="claim-results-grid"></div>
+    </section>
+
+    <section class="claim-explainer">
+      <div><span class="kicker">Honest by design</span><h2>Fast signals. Human confirmation.</h2></div>
+      <div class="claim-explainer-grid">
+        <article><span>01</span><h3>Check</h3><p>Only fixed, allowlisted profile locations are queried.</p></article>
+        <article><span>02</span><h3>Prioritize</h3><p>Likely available names rise to the top automatically.</p></article>
+        <article><span>03</span><h3>Claim</h3><p>Official signup pages open in a new tab. No credentials touch this site.</p></article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="brand footer-brand"><img class="brand-avatar" src="assets/marfeyx-avatar.jpg" alt="" width="30" height="30"><span>Marfeyx' <span>Webscraper</span></span></div>
+    <p>Public-footprint research with evidence attached.</p>
+    <nav><a href="index.html">Footprint scan</a><a href="sites.html">Platform index</a><a href="safety.html">Safety</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="mailto:dev@marfeyx.ch">Contact</a></nav>
+    <small>© <span id="year"></span> Marfeyx. Platform names and marks belong to their respective owners.</small>
+  </footer>
+
+  <noscript><div class="noscript">Username Sniper requires JavaScript to run an availability check.</div></noscript>
+  <script src="config.js?v=1.5.0"></script>
+  <script type="module" src="sniper-1.5.js"></script>
+</body>
+</html>

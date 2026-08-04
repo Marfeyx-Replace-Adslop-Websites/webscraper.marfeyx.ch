@@ -1,6 +1,8 @@
 import { readFile } from "node:fs/promises";
+import { CLAIM_PLATFORMS } from "../claim-platforms.js";
 
 const catalogue = JSON.parse(await readFile("data/platforms.json", "utf8"));
+const claimServerSource = await readFile("supabase/functions/alias-scan/claim-platform-ids.ts", "utf8");
 if (!Array.isArray(catalogue.sites) || catalogue.sites.length < 1_500) throw new Error("Catalogue must contain at least 1,500 platforms.");
 const ids = new Set();
 for (const site of catalogue.sites) {
@@ -13,4 +15,13 @@ for (const site of catalogue.sites) {
 }
 if (catalogue.totalSites !== catalogue.sites.length) throw new Error("Catalogue metadata count is stale.");
 if (!Number.isInteger(catalogue.focusedSites) || catalogue.focusedSites < 100 || catalogue.focusedSites > catalogue.sites.length) throw new Error("Focused catalogue count is invalid.");
+if (CLAIM_PLATFORMS.length < 20 || CLAIM_PLATFORMS.length > 40) throw new Error("Claim platform count must stay between 20 and 40.");
+const claimIds = new Set();
+for (const platform of CLAIM_PLATFORMS) {
+  if (!ids.has(platform.id) || claimIds.has(platform.id)) throw new Error(`Invalid claim platform: ${platform.id}`);
+  if (!String(platform.claimUrl).startsWith("https://")) throw new Error(`Unsafe claim URL: ${platform.name}`);
+  claimIds.add(platform.id);
+}
+const serverClaimIds = [...claimServerSource.matchAll(/"([a-z0-9-]+)"/g)].map(match => match[1]);
+if (serverClaimIds.length !== claimIds.size || serverClaimIds.some(id => !claimIds.has(id))) throw new Error("Browser and Edge claim platform allowlists differ.");
 console.log(`Validated ${catalogue.sites.length} HTTPS platform definitions.`);

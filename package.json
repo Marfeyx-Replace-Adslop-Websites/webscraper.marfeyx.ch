@@ -1,10 +1,10 @@
 {
   "name": "marfeyx-webscraper",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "check": "node --check app.js && node scripts/validate-catalogue.mjs"
+    "check": "node --check app.js && node --check sites.js && node --check sniper.js && node --check claim-platforms.js && node scripts/validate-catalogue.mjs"
   }
 }
