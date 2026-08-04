@@ -94,7 +94,7 @@ async function loadCatalogue() {
   $("#hero-platform-count").textContent = `${count}`;
   $("#coverage-count").textContent = count;
   $("#deep-scan-count").textContent = `${count.toLocaleString()} sites`;
-  $("#focused-scan-count").textContent = `${(data.focusedSites || 600).toLocaleString()} priority sites`;
+  $("#focused-scan-count").textContent = `${(data.focusedSites || 600).toLocaleString()} sites · faster`;
   const grouped = Object.groupBy ? Object.groupBy(state.catalogue, site => site.category) : state.catalogue.reduce((acc, site) => {
     (acc[site.category] ||= []).push(site);
     return acc;

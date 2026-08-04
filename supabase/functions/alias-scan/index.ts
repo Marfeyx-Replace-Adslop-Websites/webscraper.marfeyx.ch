@@ -537,6 +537,36 @@ async function handleStatus(body: JsonRecord) {
   };
 }
 
+// Compatibility for tabs that loaded the pre-background-worker client. These
+// actions are read-only: the active worker remains the single scan authority.
+async function handleLegacyBatch(body: JsonRecord) {
+  const scan = await verifyScan(body.scanId, body.scanToken);
+  const platformIds = Array.isArray(body.platformIds)
+    ? [...new Set(body.platformIds.map(String).filter(id => PLATFORM_MAP.has(id)))].slice(0, 10)
+    : [];
+  if (!platformIds.length) return { results: [], retryAfterMs: 450, deprecated: true };
+  const { data, error } = await supabase.from("scan_results")
+    .select("result_data")
+    .eq("scan_id", scan.id)
+    .in("platform_id", platformIds)
+    .order("id", { ascending: true });
+  if (error) throw new Error(error.message);
+  return {
+    results: (data || []).map((row: { result_data: JsonRecord }) => row.result_data),
+    retryAfterMs: 450,
+    deprecated: true
+  };
+}
+
+async function handleLegacyFinish(body: JsonRecord) {
+  const scan = await verifyScan(body.scanId, body.scanToken);
+  return {
+    complete: scan.status === "complete",
+    status: scan.status,
+    deprecated: true
+  };
+}
+
 async function handleStop(body: JsonRecord) {
   const scan = await verifyScan(body.scanId, body.scanToken);
   if (["complete", "failed", "stopped"].includes(scan.status)) return { status: scan.status };
@@ -601,6 +631,8 @@ Deno.serve(async (req: Request) => {
     let result: unknown;
     if (action === "start") result = await handleStart(body, key);
     else if (action === "status") result = await handleStatus(body);
+    else if (action === "scan-batch") result = await handleLegacyBatch(body);
+    else if (action === "finish") result = await handleLegacyFinish(body);
     else if (action === "stop") result = await handleStop(body);
     else if (action === "email-report") result = await handleEmail(body, key);
     else throw new HttpError(400, "Unknown action.");

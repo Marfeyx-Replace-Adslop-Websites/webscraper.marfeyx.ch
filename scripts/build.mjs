@@ -2,7 +2,7 @@ import { cp, mkdir, rm } from "node:fs/promises";
 
 const files = [
   "index.html", "privacy.html", "terms.html", "safety.html", "sites.html", "404.html",
-  "styles.css", "app.js", "sites.js", "config.js", "CNAME", ".nojekyll", "robots.txt", "sitemap.xml"
+  "styles.css", "styles-1.4.css", "app.js", "app-1.4.js", "sites.js", "sites-1.4.js", "config.js", "CNAME", ".nojekyll", "robots.txt", "sitemap.xml"
 ];
 
 await rm("dist", { recursive: true, force: true });
