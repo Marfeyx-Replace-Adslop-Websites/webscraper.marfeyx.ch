@@ -296,3 +296,9 @@ footer { width: var(--content); margin: 0 auto; padding: 46px 0 32px; border-top
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* Freeze terminal scan visuals instead of burning battery for a job that is already dead. */
+.scan-complete .radar b,
+.scan-complete .radar i,
+.scan-complete .radar i::after,
+.scan-complete .radar-wrap > small em { animation-play-state: paused; }

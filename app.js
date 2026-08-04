@@ -182,6 +182,7 @@ async function api(body, signal) {
 }
 
 function resetScan() {
+  progressSection.classList.remove("scan-complete");
   state.results = [];
   state.scanId = null;
   state.scanToken = null;
@@ -391,6 +392,7 @@ function renderLive(incoming) {
 }
 
 function finishScan(partial = false) {
+  progressSection.classList.add("scan-complete");
   clearInterval(state.timer);
   $("#progress-title").textContent = partial ? "Partial scan saved" : "Public footprint mapped";
   $("#progress-label").textContent = partial ? "Stopped before every platform was checked." : "All eligible platform checks completed.";

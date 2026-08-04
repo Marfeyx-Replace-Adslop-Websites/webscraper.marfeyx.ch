@@ -4,9 +4,11 @@ import { isPrivateHost } from "../supabase/functions/alias-scan/url-safety.js";
 
 const catalogue = JSON.parse(await readFile("data/platforms.json", "utf8"));
 const claimServerSource = await readFile("supabase/functions/alias-scan/claim-platform-ids.ts", "utf8");
-if (!Array.isArray(catalogue.sites) || catalogue.sites.length < 1_500) throw new Error("Catalogue must contain at least 1,500 platforms.");
+if (!Array.isArray(catalogue.sites) || catalogue.sites.length < 1_200) throw new Error("Catalogue must contain at least 1,200 platforms.");
 const ids = new Set();
+const russianDestination = /https:\/\/[^/?#]*\.(?:ru|su)(?:[/:?#]|$)/i;
 for (const site of catalogue.sites) {
+  if (site.tags?.some(tag => String(tag).toLowerCase() === "ru") || russianDestination.test([site.profileUrl, site.probeUrl, site.errorUrl].filter(Boolean).join(" "))) throw new Error(`Russian-focused platform leaked into catalogue: ${site.name}`);
   if (!site.id || ids.has(site.id)) throw new Error(`Duplicate or missing platform ID: ${site.id}`);
   if (!String(site.profileUrl).startsWith("https://")) throw new Error(`Non-HTTPS platform: ${site.name}`);
   if (!JSON.stringify(site).includes("{}")) throw new Error(`Missing alias placeholder: ${site.name}`);
