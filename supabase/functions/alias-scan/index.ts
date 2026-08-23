@@ -1,6 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
 import { FOCUSED_SITE_COUNT, PLATFORMS } from "./catalogue.ts";
-import { CLAIM_PLATFORM_IDS } from "./claim-platform-ids.ts";
 import { isPrivateHost } from "./url-safety.js";
 
 declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
@@ -75,9 +74,7 @@ const FOCUSED_DUPLICATE_OF: Record<string, string> = {
   twitch: "twitch-2",
   threads: "threads-2"
 };
-const CLAIM_PLATFORM_ID_SET = new Set<string>(CLAIM_PLATFORM_IDS);
 const MAX_ALIASES = 3;
-const MAX_CLAIM_PLATFORMS = 100;
 const WORKER_CHUNK_SIZE = 24;
 const WORKER_CONCURRENCY = 16;
 const FETCH_TIMEOUT_MS = 4_500;
@@ -85,7 +82,6 @@ const MAX_RESPONSE_BYTES = 96_000;
 const ALIAS_PATTERN = /^[\p{L}\p{N}][\p{L}\p{N}._-]{0,31}$/u;
 const ALLOWED_ORIGINS = new Set([
   "https://webscraper.marfeyx.ch",
-  "https://usernamesniper.marfeyx.ch",
   "https://marfeyx.github.io",
   "http://localhost:8000",
   "http://127.0.0.1:8000",
@@ -534,11 +530,8 @@ async function runWorker(scanId: string): Promise<void> {
     const aliases = scan.aliases as string[];
     const tasks = platforms.flatMap(platform => aliases.map(alias => ({ platform, alias })));
     const results = await pool(tasks, WORKER_CONCURRENCY, task => checkPlatform(task.platform, task.alias));
-    const detailedClaimScan = aliases.length === 1 &&
-      scan.platform_ids.length <= MAX_CLAIM_PLATFORMS &&
-      scan.platform_ids.every((id: string) => CLAIM_PLATFORM_ID_SET.has(id));
     const rows = results
-      .filter(result => detailedClaimScan || result.status === "found" || result.status === "uncertain")
+      .filter(result => result.status === "found" || result.status === "uncertain")
       .map(result => ({ scan_id: scan.id, alias: result.alias, platform_id: result.platformId, status: result.status, profile_url: result.profileUrl, response_ms: result.responseMs, result_data: result }));
     if (rows.length) {
       const { error: resultError } = await supabase.from("scan_results").upsert(rows, { onConflict: "scan_id,alias,platform_id" });
@@ -584,36 +577,6 @@ async function handleStart(body: JsonRecord, key: string) {
     aliases,
     alias_count: aliases.length,
     scope,
-    platform_ids: platformIds,
-    platform_count: platformIds.length,
-    status: "queued",
-    last_heartbeat_at: new Date().toISOString()
-  }).select("id, expires_at, platform_count").single();
-  if (error) throw new Error(error.message);
-  EdgeRuntime.waitUntil(runWorker(data.id));
-  return { scanId: data.id, scanToken: token, expiresAt: data.expires_at, platformCount: data.platform_count, status: "queued" };
-}
-
-async function handleClaimStart(body: JsonRecord, key: string) {
-  const aliases = normalizeAliases(body.aliases);
-  if (aliases.length !== 1) throw new HttpError(400, "Username Claim checks exactly one username at a time.");
-  if (!Array.isArray(body.platformIds) || body.platformIds.length < 1 || body.platformIds.length > MAX_CLAIM_PLATFORMS) {
-    throw new HttpError(400, `Choose between one and ${MAX_CLAIM_PLATFORMS} supported platforms.`);
-  }
-  const platformIds = [...new Set(body.platformIds.map(String))];
-  if (platformIds.length !== body.platformIds.length || platformIds.some(id => !CLAIM_PLATFORM_ID_SET.has(id) || !PLATFORM_MAP.has(id))) {
-    throw new HttpError(400, "The claim request contains an unsupported platform.");
-  }
-  await consumeLimit(key, "claim-start", 6, 3600);
-  await consumeLimit("global", "claim-start", 120, 3600);
-  const token = randomToken();
-  const tokenHash = await sha256(token);
-  const { data, error } = await supabase.from("scans").insert({
-    token_hash: tokenHash,
-    client_hash: key,
-    aliases,
-    alias_count: 1,
-    scope: "focused",
     platform_ids: platformIds,
     platform_count: platformIds.length,
     status: "queued",
@@ -766,7 +729,6 @@ Deno.serve(async (req: Request) => {
     const key = await requestKey(req);
     let result: unknown;
     if (action === "start") result = await handleStart(body, key);
-    else if (action === "start-claim") result = await handleClaimStart(body, key);
     else if (action === "status") result = await handleStatus(body);
     else if (action === "scan-batch") result = await handleLegacyBatch(body);
     else if (action === "finish") result = await handleLegacyFinish(body);
