@@ -1,57 +1,67 @@
 # Marfeyx' Webscraper
 
-Marfeyx' Webscraper searches up to three aliases across a curated catalogue of 1,761 public platforms. The frontend is a dependency-free static site hosted on GitHub Pages. Supabase is the only application backend and provides resumable background scans, short-lived storage, abuse controls, and a tightly allowlisted Edge Function for checks that browsers cannot read because of CORS.
+[Open the live site](https://webscraper.marfeyx.ch/) · [Report a security issue](SECURITY.md)
 
-## Architecture
+Marfeyx' Webscraper helps people review their public online footprint. Enter up to three aliases to check a curated catalogue of 1,372 public platforms, then receive a source-linked report with confirmed and uncertain matches clearly separated.
 
-- `index.html`, `styles.css`, `app.js`: static GitHub Pages application
-- `data/platforms.json`: non-NSFW HTTPS platform catalogue derived from the MIT-licensed Sherlock and Maigret projects
-- `supabase/functions/alias-scan`: validated, rate-limited scan and report-delivery API
-- `supabase/migrations`: RLS-protected, 24-hour scan storage and atomic rate limits
-- `.github/workflows/pages.yml`: validates and deploys only the static `dist/` artifact
+It is designed for legitimate self-audits, account monitoring, and authorized research—not for surveillance, harassment, credential attacks, or access-control bypasses.
 
-## Repository layout
+## What it does
 
-- Root HTML, `app.js`, and `styles.css`: current static application source
-- `results/`: report page; `results.js`: its client-side behavior
-- `assets/`, `data/`, `licenses/`: static assets, platform catalogue, and source notices
-- `scripts/`: build and catalogue-maintenance tools
-- `supabase/`: Edge Function and SQL migrations
+- Checks a focused set of 600 high-priority platforms or the full HTTPS catalogue.
+- Uses server-side, resumable scan chunks so an in-progress scan can continue after the browser is closed.
+- Retains only useful result rows and automatically expires scan data within 24 hours.
+- Keeps browser input constrained to aliases and server-selected platform IDs; users cannot submit arbitrary URLs.
 
-Historical versioned frontend assets are intentionally not kept in the working tree; Git history remains the archive.
+## Privacy and safety
 
-The Edge Function selects platform IDs server-side—never URLs supplied by the browser. It processes resumable chunks in the background, so closing the page does not cancel a scan. Only confirmed and uncertain matches are retained as result rows; ordinary misses and request failures become compact counters. Requests use bounded concurrency, strict timeouts, manual redirects, fixed methods, payload limits and per-client/global rate limits. Focused mode checks 600 priority platforms; deep mode checks the full catalogue.
+The project works only with public profile locations and public platform APIs. It does not sign in to services, request passwords, access private profiles, or create advertising profiles.
 
-## Configure Supabase
+Each request is bounded by fixed destinations, rate limits, small concurrency pools, timeouts, response-size limits, and redirect controls. A match is evidence, not proof that two accounts belong to the same person. See [Safety](https://webscraper.marfeyx.ch/safety.html), [Privacy](https://webscraper.marfeyx.ch/privacy.html), and [Terms](https://webscraper.marfeyx.ch/terms.html) for the public policies.
 
-1. Create a Supabase project in a European region.
-2. Apply the SQL files in `supabase/migrations` in filename order.
-3. Deploy `supabase/functions/alias-scan` with JWT verification disabled. The function validates the modern publishable key itself because modern Supabase keys are not JWTs.
-4. Optionally add a random `RATE_LIMIT_SALT` function secret. Without one, the injected Supabase secret key is used as the non-public salt.
-5. For automatic report email, add `RESEND_API_KEY` and optionally `REPORT_FROM`. The sending domain must be verified by the email provider. Without it, the UI opens a local email-client fallback.
-6. Copy `config.example.js` to the ignored `config.js`, then put the project URL and publishable key there. Never put a Supabase secret/service-role key in the frontend.
-7. For GitHub Pages, base64-encode that completed file and save it as the repository Actions secret `WEBSCRAPER_CONFIG_JS_B64`. The workflow injects it only while producing the deployment artifact. The build falls back to the example config for local open-source previews.
+## Project layout
 
-## Local preview
+| Path | Purpose |
+| --- | --- |
+| `index.html`, `app.js`, `styles.css` | Static scanner application |
+| `results/`, `results.js` | Dedicated scan-report page |
+| `data/platforms.json` | Curated public-platform catalogue |
+| `supabase/functions/alias-scan` | Rate-limited Edge Function for scans and report delivery |
+| `supabase/migrations` | Database schema, RLS policies, retention, and rate limits |
+| `scripts/` | Build and catalogue validation tools |
+| `.github/workflows/pages.yml` | GitHub Pages validation and deployment |
+
+Historical frontend snapshots are kept in Git history rather than in the working tree.
+
+## Validate a change
+
+Run the project checks before opening a pull request:
 
 ```bash
 npm run check
 npm run build
-python -m http.server 8000
 ```
 
-Open `http://localhost:8000`. Add `?demo=1` to exercise the complete UI without making external requests.
+`npm run check` validates the JavaScript sources, platform catalogue, safe URLs, and required gaming definitions. `npm run build` produces the deployable `dist/` artifact.
 
-## GitHub Pages
+## Deploy and configure
 
-Enable **Settings → Pages → Source: GitHub Actions**. The included workflow publishes the static artifact and the `CNAME` file maps it to `webscraper.marfeyx.ch`. Configure the matching DNS record separately.
+The public site is deployed through GitHub Pages. Its runtime Supabase configuration is never committed:
 
-## Privacy and limitations
+1. Create a Supabase project, preferably in a European region, and apply the SQL files in `supabase/migrations` in filename order.
+2. Deploy the `alias-scan` Edge Function with the repository's function configuration.
+3. Set `RATE_LIMIT_SALT`; optionally set `RESEND_API_KEY` and `REPORT_FROM` for report email delivery.
+4. Copy `config.example.js` to the ignored `config.js` and enter the project URL plus a **publishable** key. Never place a Supabase secret or service-role key in frontend code.
+5. Base64-encode the completed `config.js` and save it as the GitHub Actions secret `WEBSCRAPER_CONFIG_JS_B64`. The Pages workflow injects it only into the deployment artifact.
 
-Scan results expire within 24 hours. Alias matches are not identity proof. Some platforms block automated access, change profile patterns, require authentication, or return misleading status pages, so the report separates confirmed, uncertain, missing and blocked checks.
+The browser-facing Supabase URL and publishable key are intentionally public client configuration; database access is protected by the backend and RLS policies. Never expose a service-role or secret key.
 
-Platform definitions are adapted from the [Sherlock Project](https://github.com/sherlock-project/sherlock) and [Maigret](https://github.com/soxoj/maigret). Their MIT licenses are preserved in `licenses/`.
+## Contributing
+
+Contributions are welcome for safe platform definitions, accessibility, reliability, and documentation. Keep platform checks HTTPS-only, preserve the server-side URL allowlist, and do not commit runtime configuration, credentials, generated artifacts, or personal scan data.
+
+Platform definitions are adapted from the MIT-licensed [Sherlock Project](https://github.com/sherlock-project/sherlock) and [Maigret](https://github.com/soxoj/maigret). Their source notices are retained in `licenses/`.
 
 ## License
 
-This project is released under the [MIT License](LICENSE). Third-party catalogue source notices are retained in `licenses/`.
+This project is released under the [MIT License](LICENSE).
