@@ -25,6 +25,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Provide production runtime configuration
+        env:
+          WEBSCRAPER_CONFIG_JS_B64: ${{ secrets.WEBSCRAPER_CONFIG_JS_B64 }}
+        run: |
+          test -n "$WEBSCRAPER_CONFIG_JS_B64"
+          printf '%s' "$WEBSCRAPER_CONFIG_JS_B64" | base64 --decode > config.js
       - run: npm run check
       - run: npm run build
       - uses: actions/configure-pages@v5

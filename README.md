@@ -19,7 +19,8 @@ The Edge Function selects platform IDs server-side—never URLs supplied by the 
 3. Deploy `supabase/functions/alias-scan` with JWT verification disabled. The function validates the modern publishable key itself because modern Supabase keys are not JWTs.
 4. Optionally add a random `RATE_LIMIT_SALT` function secret. Without one, the injected Supabase secret key is used as the non-public salt.
 5. For automatic report email, add `RESEND_API_KEY` and optionally `REPORT_FROM`. The sending domain must be verified by the email provider. Without it, the UI opens a local email-client fallback.
-6. Put the project URL and publishable key in `config.js`. Never put a Supabase secret/service-role key in the frontend.
+6. Copy `config.example.js` to the ignored `config.js`, then put the project URL and publishable key there. Never put a Supabase secret/service-role key in the frontend.
+7. For GitHub Pages, base64-encode that completed file and save it as the repository Actions secret `WEBSCRAPER_CONFIG_JS_B64`. The workflow injects it only while producing the deployment artifact. The build falls back to the example config for local open-source previews.
 
 ## Local preview
 
