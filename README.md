@@ -41,3 +41,7 @@ Enable **Settings → Pages → Source: GitHub Actions**. The included workflow 
 Scan results expire within 24 hours. Alias matches are not identity proof. Some platforms block automated access, change profile patterns, require authentication, or return misleading status pages, so the report separates confirmed, uncertain, missing and blocked checks.
 
 Platform definitions are adapted from the [Sherlock Project](https://github.com/sherlock-project/sherlock) and [Maigret](https://github.com/soxoj/maigret). Their MIT licenses are preserved in `licenses/`.
+
+## License
+
+This project is released under the [MIT License](LICENSE). Third-party catalogue source notices are retained in `licenses/`.
