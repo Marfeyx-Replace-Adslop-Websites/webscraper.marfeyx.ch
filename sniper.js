@@ -1,4 +1,4 @@
-import { CLAIM_PLATFORMS } from "./claim-platforms-1.6.js";
+import { CLAIM_PLATFORMS } from "./claim-platforms.js";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];

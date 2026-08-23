@@ -23,6 +23,24 @@ const POPULAR_RESULT_IDS = [
   "quora",
   "spotify",
   "soundcloud",
+  "fortnitetracker",
+  "battlefield-2042-tracker",
+  "battlefield-v-tracker",
+  "battlefield-1-tracker",
+  "minecraft",
+  "mcuuid",
+  "halo-infinite-tracker",
+  "rocket-league-tracker",
+  "rainbow-six-siege-tracker",
+  "cs2-tracker",
+  "apexlegends",
+  "faceit",
+  "psnprofiles-com",
+  "op-gg-pubg",
+  "op-gg-valorant",
+  "runescape",
+  "osu",
+  "tetr-io",
   "steam-community-user",
   "roblox",
   "xbox-gamertag",
@@ -71,6 +89,7 @@ const progressSection = $("#progress-section");
 const resultsSection = $("#results-section");
 const demoMode = new URLSearchParams(location.search).get("demo") === "1";
 const ACTIVE_SCAN_KEY = "marfeyx-active-scan-v2";
+const COMPLETED_SCAN_KEY = "marfeyx-completed-scan-v1";
 
 function configured() {
   return /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(config.supabaseUrl || "") &&
@@ -182,6 +201,7 @@ async function api(body, signal) {
 }
 
 function resetScan() {
+  localStorage.removeItem(COMPLETED_SCAN_KEY);
   progressSection.classList.remove("scan-complete");
   state.results = [];
   state.scanId = null;
@@ -195,7 +215,7 @@ function resetScan() {
   $("#progress-title").textContent = "Mapping public profiles";
   $("#progress-label").textContent = "Preparing platform catalogue…";
   updateProgress(0, 0);
-  resultsSection.hidden = true;
+  if (resultsSection) resultsSection.hidden = true;
 }
 
 async function startScan(event) {
@@ -396,10 +416,30 @@ function finishScan(partial = false) {
   clearInterval(state.timer);
   $("#progress-title").textContent = partial ? "Partial scan saved" : "Public footprint mapped";
   $("#progress-label").textContent = partial ? "Stopped before every platform was checked." : "All eligible platform checks completed.";
-  renderResults();
-  resultsSection.hidden = false;
-  celebrate();
-  setTimeout(() => resultsSection.scrollIntoView({ behavior: "smooth", block: "start" }), 250);
+  try {
+    localStorage.setItem(COMPLETED_SCAN_KEY, JSON.stringify({
+      savedAt: Date.now(), partial, scanId: state.scanId, scanToken: state.scanToken,
+      aliases: state.aliases, results: state.results.map(compactResult),
+      platformTotal: state.platformTotal, checkedTotal: state.checkedTotal
+    }));
+  } catch {
+    formError.textContent = "Safari could not prepare the results page because local storage is full. Clear this site's browser data and run the scan again.";
+    return;
+  }
+  clearActiveScan();
+  setTimeout(() => location.assign("results/"), 120);
+}
+
+function compactResult(result) {
+  const text = (value, limit = 240) => typeof value === "string" ? value.slice(0, limit) : value;
+  return {
+    platformId: text(result.platformId, 100), platform: text(result.platform, 120),
+    alias: text(result.alias, 32), status: text(result.status, 20), message: text(result.message),
+    profileUrl: text(result.profileUrl, 600), avatarUrl: text(result.avatarUrl, 600),
+    displayName: text(result.displayName, 160), contentCount: Number(result.contentCount) || 0,
+    metrics: Object.fromEntries(Object.entries(result.metrics || {}).slice(0, 6).map(([key, value]) => [text(key, 60), typeof value === "number" ? value : text(String(value), 100)])),
+    recentItems: Array.isArray(result.recentItems) ? result.recentItems.slice(0, 3).map(item => ({ title: text(item.title, 160), url: text(item.url, 600) })) : []
+  };
 }
 
 function resultContentCount(result) {
@@ -629,6 +669,7 @@ async function runDemo() {
     ["codeforces", "Codeforces", "Developer", "https://codeforces.com/profile/{}"]
   ];
   const total = 40;
+  state.platformTotal = total;
   for (let i = 0; i < total; i += 5) {
     await wait(220, state.controller.signal);
     const incoming = demoPlatforms.map(([platformId, platform, category, url], offset) => ({
@@ -662,25 +703,6 @@ $("#stop-scan").addEventListener("click", async () => {
   clearActiveScan();
   state.controller?.abort();
 });
-$("#result-filter").addEventListener("input", () => { state.visibleLimit = RESULT_PAGE_SIZE; renderResultCards(); });
-$("#status-filter").addEventListener("change", () => { state.visibleLimit = RESULT_PAGE_SIZE; renderResultCards(); });
-$("#load-more").addEventListener("click", () => {
-  state.visibleLimit += RESULT_PAGE_SIZE;
-  renderResultCards({ append: true });
-});
-$("#download-report-button").addEventListener("click", downloadReport);
-const emailDialog = $("#email-dialog");
-$("#email-report-button").addEventListener("click", () => {
-  const status = $("#email-status");
-  status.textContent = "";
-  status.style.color = "";
-  emailDialog.showModal();
-});
-$("#email-dialog-close").addEventListener("click", () => emailDialog.close());
-emailDialog.addEventListener("click", event => {
-  if (event.target === emailDialog) emailDialog.close();
-});
-$("#email-form").addEventListener("submit", sendEmail);
 $("#year").textContent = new Date().getFullYear();
 
 loadCatalogue()

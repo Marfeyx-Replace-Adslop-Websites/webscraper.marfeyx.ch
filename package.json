@@ -6,6 +6,6 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "catalogue:gaming": "node scripts/update-gaming-catalogue.mjs",
-    "check": "node --check app.js && node --check app-2.0.js && node --check results-2.0.js && node --check sites.js && node --check sniper.js && node --check claim-platforms.js && node --check claim-platforms-1.6.js && node --check supabase/functions/alias-scan/url-safety.js && node scripts/validate-catalogue.mjs"
+    "check": "node --check app.js && node --check results.js && node --check sites.js && node --check sniper.js && node --check claim-platforms.js && node --check supabase/functions/alias-scan/url-safety.js && node scripts/validate-catalogue.mjs"
   }
 }

@@ -10,6 +10,16 @@ Marfeyx' Webscraper searches up to three aliases across a curated catalogue of 1
 - `supabase/migrations`: RLS-protected, 24-hour scan storage and atomic rate limits
 - `.github/workflows/pages.yml`: validates and deploys only the static `dist/` artifact
 
+## Repository layout
+
+- Root HTML, `app.js`, and `styles.css`: current static application source
+- `results/`: report page; `results.js`: its client-side behavior
+- `assets/`, `data/`, `licenses/`: static assets, platform catalogue, and source notices
+- `scripts/`: build and catalogue-maintenance tools
+- `supabase/`: Edge Function and SQL migrations
+
+Historical versioned frontend assets are intentionally not kept in the working tree; Git history remains the archive.
+
 The Edge Function selects platform IDs server-side—never URLs supplied by the browser. It processes resumable chunks in the background, so closing the page does not cancel a scan. Only confirmed and uncertain matches are retained as result rows; ordinary misses and request failures become compact counters. Requests use bounded concurrency, strict timeouts, manual redirects, fixed methods, payload limits and per-client/global rate limits. Focused mode checks 600 priority platforms; deep mode checks the full catalogue.
 
 ## Configure Supabase

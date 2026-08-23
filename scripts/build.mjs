@@ -2,7 +2,7 @@ import { access, cp, mkdir, rm } from "node:fs/promises";
 
 const files = [
   "index.html", "sniper.html", "privacy.html", "terms.html", "safety.html", "sites.html", "404.html",
-  "styles.css", "styles-1.4.css", "styles-1.5.css", "styles-1.6.css", "styles-1.7.css", "styles-1.9.css", "styles-2.0.css", "app.js", "app-1.4.js", "app-1.5.js", "app-1.6.js", "app-1.7.js", "app-1.8.js", "app-1.9.js", "app-2.0.js", "results-2.0.js", "sites.js", "sites-1.4.js", "sites-1.5.js", "sites-1.6.js", "sniper.js", "sniper-1.5.js", "sniper-1.6.js", "claim-platforms.js", "claim-platforms-1.6.js", "CNAME", ".nojekyll", "robots.txt", "sitemap.xml"
+  "styles.css", "app.js", "results.js", "sites.js", "sniper.js", "claim-platforms.js", "CNAME", ".nojekyll", "robots.txt", "sitemap.xml"
 ];
 
 const runtimeConfig = await access("config.js").then(() => "config.js").catch(() => "config.example.js");

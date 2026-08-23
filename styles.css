@@ -302,3 +302,50 @@ footer { width: var(--content); margin: 0 auto; padding: 46px 0 32px; border-top
 .scan-complete .radar i,
 .scan-complete .radar i::after,
 .scan-complete .radar-wrap > small em { animation-play-state: paused; }
++
+/* Dedicated result pages */
+.results-page-main { width: var(--content); min-height: calc(100vh - 76px); margin: 0 auto; padding: 88px 0 96px; }
+.results-page .dedicated-results { padding: 0; border: 0; }
+.result-page-heading { padding: 24px; border: 1px solid var(--line-bright); border-radius: 20px; background: linear-gradient(145deg,rgba(19,21,45,.94),rgba(10,12,27,.92)); box-shadow: 0 24px 70px rgba(0,0,0,.24); }
+.result-page-heading h1 { margin: 8px 0 7px; font-size: clamp(38px,6vw,64px); font-weight: 590; line-height: 1; letter-spacing: -.055em; }
+.result-page-heading p { max-width: 680px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.result-page-heading + .stats-grid, .result-page-heading + .claim-stats { margin-top: 16px; }
+.results-page .result-toolbar, .results-page .claim-toolbar { position: sticky; top: 74px; z-index: 8; padding: 9px; border: 1px solid var(--line); border-radius: 15px; background: rgba(9,10,23,.93); box-shadow: 0 15px 42px rgba(0,0,0,.3); backdrop-filter: blur(20px); }
+.results-page .result-card, .results-page .claim-card { box-shadow: 0 10px 30px rgba(0,0,0,.12); }
+.results-page .result-link { min-height: 38px; display: flex; align-items: center; justify-content: center; margin-top: 12px; border: 1px solid rgba(148,119,255,.23); border-radius: 10px; background: rgba(148,119,255,.075); font-size: 11px; font-weight: 550; }
+.results-page .claim-card-identity h3 { font-size: 15px; }
+.results-page .claim-card-identity p, .results-page .claim-card-message { font-size: 11px; }
+.results-page .claim-status, .results-page .claim-card-actions .primary-button, .results-page .claim-card-actions .secondary-button, .results-page .claim-mark { font-size: 10px; }
+.result-empty-page { max-width: 720px; margin: 80px auto; padding: 34px; border: 1px solid var(--line-bright); border-radius: 22px; background: rgba(15,17,37,.88); text-align: center; }
+.result-empty-page h1 { margin: 10px 0 12px; font-size: clamp(34px,6vw,55px); font-weight: 580; line-height: 1.03; letter-spacing: -.05em; }
+.result-empty-page p { max-width: 520px; margin: 0 auto 24px; color: var(--muted); line-height: 1.6; }
+.result-empty-page .primary-button { display: inline-flex; width: auto; }
+
+@media (max-width: 640px) {
+  input, select, textarea { font-size: 16px !important; }
+  .results-page-main { width: min(calc(100vw - 20px),1100px); padding: 82px 0 60px; }
+  .results-page .dedicated-results { padding: 0; }
+  .result-page-heading { padding: 19px 16px; border-radius: 17px; }
+  .result-page-heading h1 { font-size: 36px; }
+  .result-page-heading p { font-size: 12px; }
+  .result-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .result-actions .primary-button, .result-actions .secondary-button { width: 100%; min-height: 40px; padding-inline: 10px; }
+  .results-page .result-toolbar, .results-page .claim-toolbar { position: static; top: auto; margin: 13px 0 10px; }
+  .results-page .stats-grid, .results-page .claim-stats { gap: 6px; margin-bottom: 10px; }
+  .results-page .stats-grid article, .results-page .claim-stats article { min-height: 108px; padding: 13px; }
+  .results-page .result-card-main { grid-template-columns: 44px minmax(0,1fr); align-items: start; gap: 10px; padding: 14px; }
+  .results-page .status-badge { grid-column: 2; justify-self: start; }
+  .results-page .result-card .identity p { white-space: normal; line-height: 1.4; }
+  .results-page .result-evidence { padding: 11px 14px 14px; }
+  .results-page .metrics { gap: 5px; }
+  .results-page .metric { font-size: 10px; }
+  .results-page .claim-card { grid-template-columns: 42px minmax(0,1fr); align-items: start; gap: 10px; padding: 14px; }
+  .results-page .claim-platform-icon { width: 42px; height: 42px; }
+  .results-page .claim-status { grid-column: 2; justify-self: start; }
+  .results-page .claim-card-message, .results-page .claim-card-actions { grid-column: 1/-1; }
+  .results-page .claim-card-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .results-page .claim-card-actions a, .results-page .claim-mark { width: 100%; justify-content: center; }
+  .result-empty-page { margin: 34px auto; padding: 27px 18px; }
+  .result-empty-page h1 { font-size: 35px; }
+}
+
