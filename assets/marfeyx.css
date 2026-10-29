@@ -1,0 +1,94 @@
+@font-face { font-family: "DM Sans Variable"; font-style: normal; font-weight: 100 1000; font-display: swap; src: url("./dm-sans-latin-wght-normal.woff2") format("woff2"); }
+/* Marfeyx shared foundation v1. Each repository keeps a local copy for independent hosting. */
+:root, .dark, [data-theme="dark"] {
+  --mfx-bg: #0b0d12;
+  --mfx-panel: #131720;
+  --mfx-raised: #1b2130;
+  --mfx-ink: #eef2f8;
+  --mfx-muted: #a3adbd;
+  --muted-2: var(--mfx-muted);
+  --mfx-accent: #b7a4ff;
+  --mfx-line: #2c3444;
+  --mfx-font: "DM Sans Variable", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --background: var(--mfx-bg);
+  --foreground: var(--mfx-ink);
+  --surface: var(--mfx-panel);
+  --surface-foreground: var(--mfx-ink);
+  --surface-secondary: var(--mfx-raised);
+  --surface-tertiary: #232a3a;
+  --surface-raised: var(--mfx-raised);
+  --surface-soft: #10141c;
+  --overlay: var(--mfx-raised);
+  --overlay-foreground: var(--mfx-ink);
+  --accent: var(--mfx-accent);
+  --accent-foreground: #171126;
+  --focus: #cbbdff;
+  --muted: var(--mfx-muted);
+  --border: var(--mfx-line);
+  --separator: var(--mfx-line);
+  --field-background: #10141c;
+  --field-foreground: var(--mfx-ink);
+  --field-placeholder: var(--mfx-muted);
+  --field-border: #3a4558;
+  --default: #252d3d;
+  --default-foreground: var(--mfx-ink);
+  --radius: .75rem;
+  color-scheme: dark;
+  font-family: var(--mfx-font);
+  background-color: var(--mfx-bg);
+  color: var(--mfx-ink);
+}
+body { font-family: var(--mfx-font); }
+button, input, textarea, select { font-family: inherit; }
+:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+::selection { background: #534679; color: #fff; }
+.mfx-identity { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 18px; min-width: 0; text-align: left; flex-shrink: 0; }
+.mfx-identity .mfx-brand { display: inline-flex; align-items: center; gap: 10px; min-width: 0; color: var(--mfx-ink); text-decoration: none; border: 0; background: none; padding: 0; margin: 0; }
+.mfx-identity .mfx-emblem { display: block; flex: 0 0 36px; width: 36px; height: 36px; object-fit: contain; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.mfx-identity .mfx-wordmark { display: grid; gap: 3px; line-height: 1.15; white-space: nowrap; }
+.mfx-identity .mfx-wordmark strong { color: var(--mfx-ink); font: 700 19px/1.1 var(--mfx-font); letter-spacing: -.6px; text-transform: none; }
+.mfx-identity .mfx-wordmark > span { color: var(--mfx-muted); font: 500 11px/1.3 var(--mfx-font); letter-spacing: .015em; text-transform: none; }
+.mfx-identity .mfx-hub-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 6px 10px; border: 1px solid var(--mfx-line); border-radius: 8px; color: #c7cfdd; background: #171c27; font: 500 11px/1.2 var(--mfx-font); text-decoration: none; white-space: nowrap; }
+.mfx-identity .mfx-hub-link:hover { color: #fff; background: #252c3e; border-color: #7966b1; }
+.mfx-brand:hover .mfx-wordmark strong { color: #d3c6ff; }
+.control-panel > .mfx-identity { padding-bottom: 18px; border-bottom: 1px solid var(--mfx-line); }
+.control-panel .mfx-identity { gap: 10px; justify-content: space-between; }
+.sidebar > .mfx-identity { margin: 0 8px 30px; }
+.sidebar > .mfx-identity .mfx-hub-link { min-height: 30px; }
+@media (max-width: 640px) {
+  .mfx-identity { gap: 8px; }
+  .mfx-identity .mfx-emblem { width: 30px; height: 30px; flex-basis: 30px; }
+  .mfx-identity .mfx-wordmark strong { font-size: 17px; }
+  .mfx-identity .mfx-wordmark > span { font-size: 10px; }
+  .mfx-identity .mfx-hub-link { min-height: 44px; padding: 8px 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+@media (prefers-reduced-transparency: reduce) { * { backdrop-filter: none !important; } }
+@media (forced-colors: active) { .mfx-emblem { forced-color-adjust: none; background: #0b0d12 !important; } }
+
+/* Shared document and static-page treatment. */
+.mfx-document { margin: 0; min-width: 320px; min-height: 100svh; background: var(--mfx-bg); color: var(--mfx-ink); }
+.mfx-document * { box-sizing: border-box; }
+.mfx-document main { width: min(920px, calc(100% - 32px)); margin: auto; padding: clamp(24px, 6vw, 64px) 0; }
+.mfx-document article { display: grid; gap: 24px; padding: clamp(20px, 5vw, 40px); border: 1px solid var(--mfx-line); border-radius: 20px; background: var(--mfx-panel); }
+.mfx-document h1, .mfx-document h2, .mfx-document p { margin: 0; }
+.mfx-document h1 { font: 650 clamp(2rem, 6vw, 3rem)/1.12 var(--mfx-font); letter-spacing: -.04em; }
+.mfx-document h2 { font: 650 1.1rem/1.4 var(--mfx-font); }
+.mfx-document p, .mfx-document li { color: #bec8d8; font-size: 15px; line-height: 1.7; overflow-wrap: anywhere; }
+.mfx-document ul { display: grid; gap: 8px; padding-left: 20px; }
+.mfx-document section { display: grid; gap: 12px; padding: 20px 0 0; border: 0; border-top: 1px solid var(--mfx-line); background: transparent; }
+.mfx-document .eyebrow { color: var(--mfx-accent); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
+.mfx-document .updated { color: var(--mfx-muted); font-size: 12px; margin-top: 12px; }
+.mfx-document a { color: #cbbdff; text-underline-offset: 4px; }
+.mfx-document nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
+.mfx-document nav a { display: inline-flex; align-items: center; min-height: 44px; }
+.mfx-document .mfx-identity { padding-bottom: 24px; border-bottom: 1px solid var(--mfx-line); }
+.brand-avatar { object-fit: contain; border-radius: 0; border: 0; box-shadow: none; background: transparent; }
+.site-header .header-cta { color: #d3c6ff; border-color: #514366; background: #262034; }
+.site-header .header-cta:hover { background: #382c4e; }
+@media (pointer: coarse) {
+  .mfx-identity .mfx-brand, .mfx-identity .mfx-hub-link { min-height: 44px; }
+}

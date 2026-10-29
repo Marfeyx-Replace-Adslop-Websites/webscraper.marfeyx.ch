@@ -268,3 +268,12 @@ footer { width: var(--content); margin: 0 auto; padding: 46px 0 32px; border-top
   .result-empty-page h1 { font-size: 35px; }
 }
 
+
+/* Shared Marfeyx family, with distinct discovery-tool layouts. */
+:root { --bg: #0b0d12; --surface: #131720; --text: #eef2f8; --muted: #a3adbd; --accent: #b7a4ff; --accent-2: #d3c6ff; --line: #2c3444; }
+body { background-color: #0b0d12; color: #eef2f8; }
+.site-header { background: #0e1119; border-color: #2c3444; }
+.primary-button { color: #171126; background: #b7a4ff; }
+.primary-button:hover { background: #cbbdff; }
+.brand-avatar { object-fit: contain; border-radius: 0; background: transparent; border: 0; }
+@media (max-width: 640px) { .site-header { gap: 12px; flex-wrap: wrap; height: auto; min-height: 76px; padding-block: 16px; } .site-header .brand { min-width: 0; font-size: 15px; } .site-header .header-cta { display: inline-flex; min-height: 40px; align-items: center; } }

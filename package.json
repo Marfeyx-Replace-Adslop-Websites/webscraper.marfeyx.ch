@@ -6,6 +6,12 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "catalogue:gaming": "node scripts/update-gaming-catalogue.mjs",
-    "check": "node --check app.js && node --check results.js && node --check sites.js && node --check supabase/functions/alias-scan/url-safety.js && node scripts/validate-catalogue.mjs"
+    "check": "node --check app.js && node --check results.js && node --check sites.js && node --check supabase/functions/alias-scan/url-safety.js && node scripts/validate-catalogue.mjs",
+    "check:pages": "node scripts/verify-pages.mjs",
+    "test:pages": "node scripts/smoke-pages.mjs",
+    "postbuild": "node scripts/verify-pages.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
   }
 }

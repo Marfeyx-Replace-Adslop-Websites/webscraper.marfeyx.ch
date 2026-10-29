@@ -14,6 +14,6 @@ await mkdir("dist/results", { recursive: true });
 for (const file of files) await cp(file, `dist/${file}`);
 await cp(runtimeConfig, "dist/config.js");
 await cp("data/platforms.json", "dist/data/platforms.json");
-await cp("assets/marfeyx-avatar.jpg", "dist/assets/marfeyx-avatar.jpg");
+await cp("assets", "dist/assets", { recursive: true });
 await cp("results/index.html", "dist/results/index.html");
 console.log(`Built ${files.length + 3} static assets in dist/`);
