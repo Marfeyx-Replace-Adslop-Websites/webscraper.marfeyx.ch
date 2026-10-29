@@ -27,6 +27,13 @@ export async function servePages(directory) {
   return { server, origin: 'http://127.0.0.1:' + server.address().port, setMount(prefix) { requiredPrefix = prefix === '/' ? '' : prefix; } };
 }
 
+export function brandImageLoaded(candidateDocument) {
+  const doc = candidateDocument || document;
+  const scope = doc.getElementById('root') || doc;
+  return [...scope.querySelectorAll('img.mfx-emblem, img.brand-avatar')].some(image =>
+    image.getClientRects().length > 0 && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0);
+}
+
 export async function smokePages(directory = resolve('dist')) {
   await verifyPages(directory);
   const { chromium } = await import('playwright');
@@ -52,11 +59,15 @@ export async function smokePages(directory = resolve('dist')) {
           return scope.innerText.trim().length > 40 && [...scope.querySelectorAll('h1')].some(heading => heading.getClientRects().length > 0);
         }, null, { timeout: 20000 });
         if (new URL(page.url()).pathname !== prefix) throw new Error('Startup unexpectedly redirected: ' + page.url());
-        const branded = await page.evaluate(() => [...document.images].some(image => image.src.includes('marfeyx') && image.getClientRects().length > 0 && image.complete && image.naturalWidth > 0));
-        if (!branded) throw new Error('Visible Marfeyx logo failed to load at ' + prefix);
+        await page.waitForFunction(brandImageLoaded, null, { timeout: 20000 }).catch(error => {
+          throw new Error('Visible Marfeyx logo failed to load at ' + prefix, { cause: error });
+        });
         if (await page.locator('[data-mfx-startup-error]').count()) throw new Error('Startup recovery UI is showing instead of the app.');
         await page.reload({ waitUntil: 'load' });
         await page.waitForFunction(() => { const root = document.getElementById('root'); return !root || (!root.querySelector('[data-mfx-boot]') && root.innerText.trim().length > 40); }, null, { timeout: 20000 });
+        await page.waitForFunction(brandImageLoaded, null, { timeout: 20000 }).catch(error => {
+          throw new Error('Visible Marfeyx logo failed to load at ' + prefix, { cause: error });
+        });
         if (failures.length) throw new Error('Browser startup errors at ' + prefix + ':\n' + failures.join('\n'));
         console.log('Pages startup passed:', prefix, viewport.width + 'x' + viewport.height);
         await page.close();
